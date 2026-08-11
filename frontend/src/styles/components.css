@@ -1,0 +1,370 @@
+/* ───────────────────────── Blueprint / corner marks ───────────────────────── */
+
+.blueprint {
+  position: relative;
+  border: 1px solid var(--color-divider);
+  border-radius: 0;
+  background: var(--color-surface);
+}
+
+.blueprint .corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  pointer-events: none;
+  z-index: 2;
+}
+.blueprint .corner::before,
+.blueprint .corner::after {
+  content: '';
+  position: absolute;
+  background: var(--color-accent-500);
+}
+.blueprint .corner::before { top: 50%; left: 0; right: 0; height: 1px; transform: translateY(-50%); }
+.blueprint .corner::after { left: 50%; top: 0; bottom: 0; width: 1px; transform: translateX(-50%); }
+.blueprint .corner.tl { top: -1px; left: -1px; }
+.blueprint .corner.tr { top: -1px; right: -1px; }
+.blueprint .corner.bl { bottom: -1px; left: -1px; }
+.blueprint .corner.br { bottom: -1px; right: -1px; }
+
+/* ───────────────────────── Card ───────────────────────── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+
+.card-title {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.card-kicker {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.card-body {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ───────────────────────── Duotone image wrapper ───────────────────────── */
+
+.duotone {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+/* ───────────────────────── Buttons ───────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--color-accent-600);
+  border-color: var(--color-accent-600);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-700); border-color: var(--color-accent-700); }
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--color-divider-strong);
+  color: var(--color-text);
+}
+.btn-secondary:hover:not(:disabled) { border-color: var(--color-accent-500); color: var(--color-accent-700); }
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-accent-700);
+  padding: 6px 8px;
+}
+.btn-ghost:hover:not(:disabled) { text-decoration: underline; }
+
+.btn-icon {
+  background: transparent;
+  border-color: var(--color-divider);
+  color: var(--color-text-muted);
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.btn-icon:hover:not(:disabled) { border-color: var(--color-accent-500); color: var(--color-accent-700); }
+
+.btn-block { width: 100%; }
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--color-neutral-600);
+  color: var(--color-neutral-700);
+}
+.btn-danger:hover:not(:disabled) { background: var(--color-neutral-100); }
+
+/* ───────────────────────── Tags ───────────────────────── */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: var(--font-heading);
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-sm);
+}
+
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-outline { border: 1px solid var(--color-divider); color: var(--color-text-muted); background: transparent; }
+
+.tag-status-approved { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-status-pending { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
+.tag-status-rejected { background: var(--color-neutral-200); color: var(--color-neutral-700); }
+
+/* ───────────────────────── Fields / inputs ───────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field > label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.input {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-divider-strong);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  min-height: 42px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input:focus { border-color: var(--color-accent-500); box-shadow: 0 0 0 3px var(--color-accent-100); }
+textarea.input { min-height: 84px; resize: vertical; font-family: var(--font-body); }
+
+/* ───────────────────────── Segmented control ───────────────────────── */
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--color-divider-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.seg-opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  padding: 7px 13px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-right: 1px solid var(--color-divider-strong);
+  user-select: none;
+}
+.seg-opt:last-child { border-right: none; }
+.seg-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.seg-opt:has(input:checked) { background: var(--color-accent-100); color: var(--color-accent-800); }
+
+/* ───────────────────────── Table ───────────────────────── */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table th {
+  text-align: left;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-divider-strong);
+  white-space: nowrap;
+}
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-divider);
+  vertical-align: middle;
+}
+.table tbody tr:hover { background: var(--color-surface); }
+
+/* ───────────────────────── Nav ───────────────────────── */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--color-surface-raised);
+}
+.nav-brand {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-surface);
+}
+.admin-tab {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  white-space: nowrap;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.admin-tab.active {
+  border-color: var(--color-accent-500);
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+
+/* ───────────────────────── Lang toggle ───────────────────────── */
+
+.lang-btn {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-divider);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.lang-btn.active {
+  border-color: var(--color-accent-500);
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+
+/* ───────────────────────── Dialog / modal ───────────────────────── */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(29, 31, 32, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 500;
+}
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-7);
+  max-width: 480px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.dialog-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+}
+.dialog-body { display: flex; flex-direction: column; gap: var(--space-3); font-size: 14px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+/* ───────────────────────── Toast ───────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  background: var(--color-accent-900);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ───────────────────────── Round icon button ───────────────────────── */
+
+.icon-circle-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--color-divider);
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-circle-btn:hover { border-color: var(--color-accent-500); color: var(--color-accent-700); }
+
+/* ───────────────────────── Chip (checkbox pill) ───────────────────────── */
+
+.chip {
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  border: 1px solid var(--color-divider);
+  background: transparent;
+  color: var(--color-text);
+}
+.chip.selected {
+  border-color: var(--color-accent-500);
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}

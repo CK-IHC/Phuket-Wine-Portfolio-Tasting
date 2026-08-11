@@ -1,0 +1,19 @@
+#print-report { display: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  #app-screen { display: none !important; }
+  #print-report, #print-report * { visibility: visible; }
+  #print-report {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    padding: 32px;
+    background: #fff;
+    color: #000;
+    font-family: var(--font-body), sans-serif;
+  }
+  #print-report table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  #print-report th { text-align: left; border-bottom: 1px solid #000; padding: 4px; }
+  #print-report td { padding: 4px; border-bottom: 1px solid #ddd; }
+}
