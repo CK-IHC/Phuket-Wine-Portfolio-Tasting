@@ -10,7 +10,7 @@ const FOLDER_ID = '1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X';
 const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason'];
 // No password column — admin/staff sign in with phone number only (matched against Active users).
 const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
-const ANNOUNCE_HEADERS = ['TextTh','TextEn','EventDateLabel','EventVenue','ImageUrls','BannerAspect','StartDate','EndDate','Published'];
+const ANNOUNCE_HEADERS = ['TextTh','TextEn','EventDate','EventStartTime','EventEndTime','EventVenue','ImageUrls','BannerAspect','StartDate','EndDate','Published'];
 const FORM_HEADERS = ['FieldsJson'];
 
 function getSS() { return SpreadsheetApp.openById(SHEET_ID); }
@@ -220,13 +220,14 @@ function readAnnouncement() {
   const row = rows[rows.length - 1];
   if (!row) {
     return {
-      textTh: '', textEn: '', eventDateLabel: '', eventVenue: '',
+      textTh: '', textEn: '', eventDate: '', eventStartTime: '', eventEndTime: '', eventVenue: '',
       imageUrls: [], bannerAspect: '16/9', startDate: '', endDate: '', published: true,
     };
   }
   return {
     textTh: row.TextTh || '', textEn: row.TextEn || '',
-    eventDateLabel: row.EventDateLabel || '', eventVenue: row.EventVenue || '',
+    eventDate: row.EventDate || '', eventStartTime: row.EventStartTime || '', eventEndTime: row.EventEndTime || '',
+    eventVenue: row.EventVenue || '',
     imageUrls: String(row.ImageUrls || '').split(',').filter(Boolean),
     bannerAspect: row.BannerAspect || '16/9',
     startDate: row.StartDate || '', endDate: row.EndDate || '',
@@ -238,7 +239,7 @@ function saveAnnouncement(p) {
   const sh = getSheet('Announcements', ANNOUNCE_HEADERS);
   if (sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
   sh.appendRow([
-    p.textTh || '', p.textEn || '', p.eventDateLabel || '', p.eventVenue || '',
+    p.textTh || '', p.textEn || '', p.eventDate || '', p.eventStartTime || '', p.eventEndTime || '', p.eventVenue || '',
     (p.imageUrls || []).join(','), p.bannerAspect || '16/9',
     p.startDate || '', p.endDate || '', p.published !== false,
   ]);

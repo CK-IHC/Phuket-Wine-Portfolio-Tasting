@@ -24,6 +24,18 @@ export function formatDateOnly(raw: string | undefined, lang: Lang): string {
   return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** Formats a date-only "YYYY-MM-DD" string (e.g. from <input type="date">)
+ * without going through Date parsing, which shifts by a day near UTC
+ * midnight in negative-offset timezones. */
+export function formatDateStringOnly(dateStr: string | undefined, lang: Lang): string {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-').map(Number);
+  const [y, m, d] = parts;
+  if (!y || !m || !d) return dateStr;
+  const months = lang === 'th' ? MONTH_TH : MONTH_EN;
+  return `${d} ${months[m - 1]} ${y}`;
+}
+
 export function dataAsOfLabel(lang: Lang): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');

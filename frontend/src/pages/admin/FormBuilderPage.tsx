@@ -167,9 +167,19 @@ export function FormBuilderPage() {
                   </div>
                 </div>
                 {f.type === 'qr' && (
-                  <div style={{ width: 100, height: 100, marginTop: 8, background: 'var(--color-surface-raised)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {f.qrUrl ? <img src={f.qrUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span className="text-muted" style={{ fontSize: 11 }}>QR CODE</span>}
-                  </div>
+                  <>
+                    <div style={{ width: 100, height: 100, marginTop: 8, background: 'var(--color-surface-raised)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {f.qrUrl ? <img src={f.qrUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span className="text-muted" style={{ fontSize: 11 }}>QR CODE</span>}
+                    </div>
+                    <div
+                      style={{
+                        marginTop: 6, maxWidth: 260, border: '1px dashed var(--color-divider)', borderRadius: 'var(--radius-md)',
+                        padding: '6px 10px', fontSize: 12, color: f.qrCaption ? 'var(--color-text)' : 'var(--color-text-muted)',
+                      }}
+                    >
+                      {f.qrCaption || t('qrCaptionLabel')}
+                    </div>
+                  </>
                 )}
               </div>
             ))}

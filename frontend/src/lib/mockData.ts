@@ -87,7 +87,9 @@ export function seedAnnouncement(): Announcement {
   return {
     textTh: 'ร่วมชิมไวน์คัดสรรกว่า 60 ชนิดจากทั่วโลก พร้อมพบปะตัวแทนผู้นำเข้าไวน์ชั้นนำของภูเก็ต',
     textEn: 'Taste over 60 curated wines from around the world and meet Phuket’s leading wine importers.',
-    eventDateLabel: '20 Sep 2026 · 18:00–21:00',
+    eventDate: '2026-09-20',
+    eventStartTime: '18:00',
+    eventEndTime: '21:00',
     eventVenue: 'The Slate, Phuket',
     banners: [
       { id: 'banner1', url: '' },

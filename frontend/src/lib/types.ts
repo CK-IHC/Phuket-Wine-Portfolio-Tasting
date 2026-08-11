@@ -57,7 +57,9 @@ export interface Banner {
 export interface Announcement {
   textTh: string;
   textEn: string;
-  eventDateLabel: string;
+  eventDate: string;
+  eventStartTime: string;
+  eventEndTime: string;
   eventVenue: string;
   banners: Banner[];
   bannerAspect: BannerAspect;

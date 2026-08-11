@@ -6,6 +6,7 @@ import { LangToggle } from '../../components/ui/LangToggle';
 import { Button } from '../../components/ui/Button';
 import { BannerCarousel } from '../../components/BannerCarousel';
 import { api } from '../../lib/api';
+import { formatDateStringOnly } from '../../lib/format';
 import type { Announcement } from '../../lib/types';
 
 export function HomePage() {
@@ -46,7 +47,10 @@ export function HomePage() {
           </p>
           {announcement && (
             <p style={{ fontSize: 13, marginTop: 4, fontWeight: 600 }}>
-              {announcement.eventDateLabel} · {announcement.eventVenue}
+              {formatDateStringOnly(announcement.eventDate, lang)}
+              {announcement.eventStartTime && ` · ${announcement.eventStartTime}`}
+              {announcement.eventEndTime && `–${announcement.eventEndTime}`}
+              {announcement.eventVenue && ` · ${announcement.eventVenue}`}
             </p>
           )}
         </div>

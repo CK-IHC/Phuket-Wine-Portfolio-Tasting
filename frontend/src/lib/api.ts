@@ -87,7 +87,9 @@ export const api = {
     return {
       textTh: raw.textTh || raw.text || '',
       textEn: raw.textEn || '',
-      eventDateLabel: raw.eventDateLabel || '',
+      eventDate: raw.eventDate || '',
+      eventStartTime: raw.eventStartTime || '',
+      eventEndTime: raw.eventEndTime || '',
       eventVenue: raw.eventVenue || '',
       banners: (raw.imageUrls || []).map((url: string, i: number) => ({ id: 'banner' + i, url })),
       bannerAspect: raw.bannerAspect || '16/9',
@@ -179,7 +181,8 @@ export const api = {
   async saveAnnouncement(a: Announcement): Promise<void> {
     if (USE_MOCK) return mockStore.saveAnnouncement(a);
     await apiPost('saveAnnouncement', {
-      textTh: a.textTh, textEn: a.textEn, eventDateLabel: a.eventDateLabel, eventVenue: a.eventVenue,
+      textTh: a.textTh, textEn: a.textEn,
+      eventDate: a.eventDate, eventStartTime: a.eventStartTime, eventEndTime: a.eventEndTime, eventVenue: a.eventVenue,
       imageUrls: a.banners.map((b) => b.url), bannerAspect: a.bannerAspect,
       startDate: a.startDate, endDate: a.endDate, published: a.published,
     });
