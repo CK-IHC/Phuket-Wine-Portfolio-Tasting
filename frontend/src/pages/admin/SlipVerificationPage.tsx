@@ -14,17 +14,31 @@ export function SlipVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [slipReg, setSlipReg] = useState<Registration | null>(null);
 
   useEffect(() => {
-    api.getRegistrations().then((data) => { setRegs(data); setLoading(false); });
+    api.getRegistrations().then((data) => {
+      setRegs(data);
+      setAmounts(Object.fromEntries(data.map((r) => [r.id, r.amount ? String(r.amount) : ''])));
+      setLoading(false);
+    });
   }, []);
 
   const pending = regs.filter((r) => r.status === 'pending');
 
+  const saveAmount = async (r: Registration) => {
+    const amount = Number(amounts[r.id]) || 0;
+    if (amount === r.amount) return;
+    await api.editRegistration(r.refNo, { amount });
+    setRegs((prev) => prev.map((x) => (x.id === r.id ? { ...x, amount } : x)));
+  };
+
   const approve = async (r: Registration) => {
+    const amount = Number(amounts[r.id]) || 0;
+    await api.editRegistration(r.refNo, { amount });
     await api.approveRegistration(r.refNo);
-    setRegs((prev) => prev.map((x) => (x.id === r.id ? { ...x, status: 'approved' } : x)));
+    setRegs((prev) => prev.map((x) => (x.id === r.id ? { ...x, status: 'approved', amount } : x)));
     toast(t('toastApproved'));
   };
 
@@ -58,7 +72,18 @@ export function SlipVerificationPage() {
             <div>
               <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16 }}>{r.refNo} — {r.name}</div>
               <div className="text-muted" style={{ fontSize: 12 }}>{r.phone} · {t('submittedLabel')} {formatSubmitted(r.submittedAt, lang)}</div>
-              <div className="text-muted" style={{ fontSize: 12, marginTop: 4 }}>{r.wines.join(', ') || '-'}</div>
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>{t('amountTransferredLabel')}</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                placeholder={t('amountTransferredPlaceholder')}
+                value={amounts[r.id] ?? ''}
+                onChange={(e) => setAmounts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                onBlur={() => saveAmount(r)}
+              />
             </div>
             {rejectingId === r.id ? (
               <>

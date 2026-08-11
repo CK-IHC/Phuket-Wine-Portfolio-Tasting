@@ -39,11 +39,11 @@ export function FormResponsesPage() {
         { key: 'name', label: t('colName') }, { key: 'phone', label: t('colPhone') },
         { key: 'area', label: t('colArea') }, { key: 'arrival', label: t('colArrival') },
         { key: 'source', label: t('colSource') }, { key: 'wines', label: t('colWines') },
-        { key: 'prices', label: t('colPrices') }, { key: 'status', label: t('colStatus') },
+        { key: 'amount', label: t('colAmountTransferred') }, { key: 'status', label: t('colStatus') },
       ],
       rows: regs.map((r) => ({
         refNo: r.refNo, email: r.email, name: r.name, phone: r.phone, area: r.area,
-        arrival: r.arrival, source: r.source, wines: r.wines.join(', ') || '-', prices: r.prices.join(', ') || '-',
+        arrival: r.arrival, source: r.source, wines: r.wines.join(', ') || '-', amount: `฿${r.amount.toLocaleString()}`,
         status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
       })),
     });
@@ -54,14 +54,14 @@ export function FormResponsesPage() {
     exportRowsToExcel(
       rows.map((r) => ({
         refNo: r.refNo, email: r.email, name: r.name, phone: r.phone, area: r.area,
-        arrival: r.arrival, source: r.source, wines: r.wines.join(', '), prices: r.prices.join(', '), status: r.status,
+        arrival: r.arrival, source: r.source, wines: r.wines.join(', '), amount: r.amount, status: r.status,
       })),
       [
         { key: 'refNo', label: t('colRef') }, { key: 'email', label: t('colEmail') },
         { key: 'name', label: t('colName') }, { key: 'phone', label: t('colPhone') },
         { key: 'area', label: t('colArea') }, { key: 'arrival', label: t('colArrival') },
         { key: 'source', label: t('colSource') }, { key: 'wines', label: t('colWines') },
-        { key: 'prices', label: t('colPrices') }, { key: 'status', label: t('colStatus') },
+        { key: 'amount', label: t('colAmountTransferred') }, { key: 'status', label: t('colStatus') },
       ],
       'form-responses.xlsx'
     );
@@ -99,7 +99,7 @@ export function FormResponsesPage() {
               <th />
               <th>{t('colRef')}</th><th>{t('colEmail')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th>
               <th>{t('colArea')}</th><th>{t('colArrival')}</th><th>{t('colSource')}</th>
-              <th>{t('colWines')}</th><th>{t('colPrices')}</th><th>{t('colStatus')}</th><th />
+              <th>{t('colWines')}</th><th>{t('colAmountTransferred')}</th><th>{t('colStatus')}</th><th />
             </tr>
           </thead>
           <tbody>
@@ -108,7 +108,7 @@ export function FormResponsesPage() {
                 <td><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} /></td>
                 <td>{r.refNo}</td><td>{r.email}</td><td>{r.name}</td><td>{r.phone}</td>
                 <td>{r.area}</td><td>{r.arrival}</td><td>{r.source}</td>
-                <td>{r.wines.join(', ') || '-'}</td><td>{r.prices.join(', ') || '-'}</td>
+                <td>{r.wines.join(', ') || '-'}</td><td>฿{r.amount.toLocaleString()}</td>
                 <td><StatusTag status={r.status} /></td>
                 <td style={{ display: 'flex', gap: 4 }}>
                   <button className="btn btn-ghost" onClick={() => setEditingReg(r)}>{t('editRowBtn')}</button>

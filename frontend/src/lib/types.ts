@@ -44,6 +44,7 @@ export interface FormField {
   options: FieldOption[];
   maxSelect?: number;
   qrUrl?: string;
+  qrCaption?: string;
 }
 
 export type BannerAspect = '16/9' | '1/1' | '4/3' | '9/16';

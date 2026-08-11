@@ -39,6 +39,22 @@ export function DynamicFormField({
             )}
           </div>
           <div className="card-body">{t('paymentDesc')}</div>
+          {field.qrCaption && (
+            <div
+              style={{
+                width: '100%',
+                border: '1px solid var(--color-divider)',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-surface-raised)',
+                padding: '10px 14px',
+                fontSize: 13,
+                color: 'var(--color-text)',
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {field.qrCaption}
+            </div>
+          )}
           {onDownloadQr && (
             <Button variant="secondary" block onClick={onDownloadQr}>{t('downloadQrBtn')}</Button>
           )}

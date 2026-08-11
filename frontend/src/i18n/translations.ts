@@ -173,6 +173,10 @@ export const TR = {
   eventDateLabelField: { th: 'วันเวลาจัดงาน', en: 'Event Date & Time' },
   eventVenueField: { th: 'สถานที่จัดงาน', en: 'Venue' },
   placeholderLabel: { th: 'ข้อความช่วยกรอก (Placeholder)', en: 'Placeholder' },
+  qrCaptionLabel: { th: 'ข้อความใต้ QR Code', en: 'Caption below QR code' },
+  amountTransferredLabel: { th: 'จำนวนเงินที่โอน', en: 'Amount Transferred' },
+  amountTransferredPlaceholder: { th: 'ระบุจำนวนเงินที่โอน', en: 'Enter amount transferred' },
+  colAmountTransferred: { th: 'จำนวนเงินที่โอน', en: 'Amount Transferred' },
 } satisfies Record<string, Entry>;
 
 export type TrKey = keyof typeof TR;

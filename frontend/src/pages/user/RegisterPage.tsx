@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Blueprint } from '../../components/ui/Blueprint';
 import { DynamicFormField, type FieldValue } from '../../components/DynamicFormField';
 import { api } from '../../lib/api';
+import { buildQrCardBlob } from '../../lib/qrCard';
 import type { FormField } from '../../lib/types';
 
 export function RegisterPage() {
@@ -37,15 +38,29 @@ export function RegisterPage() {
     reader.readAsDataURL(file);
   };
 
-  const downloadQr = (field: FormField) => {
+  const downloadQr = async (field: FormField) => {
     if (!field.qrUrl) {
       toast(t('toastNoQr'));
       return;
     }
-    const a = document.createElement('a');
-    a.href = field.qrUrl;
-    a.download = 'payment-qr.png';
-    a.click();
+    try {
+      const blob = await buildQrCardBlob({
+        qrUrl: field.qrUrl,
+        caption: field.qrCaption,
+        heading: 'Phuket Wine Portfolio Tasting',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'payment-qr-card.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      const a = document.createElement('a');
+      a.href = field.qrUrl;
+      a.download = 'payment-qr.png';
+      a.click();
+    }
   };
 
   const submit = async () => {

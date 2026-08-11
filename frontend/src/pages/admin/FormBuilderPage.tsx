@@ -225,6 +225,16 @@ export function FormBuilderPage() {
                   }} />
                 </Field>
               )}
+
+              {selected.type === 'qr' && (
+                <Field label={t('qrCaptionLabel')}>
+                  <textarea
+                    className="input"
+                    value={selected.qrCaption || ''}
+                    onChange={(e) => updateField(selected.id, { qrCaption: e.target.value })}
+                  />
+                </Field>
+              )}
             </div>
           )}
         </div>
