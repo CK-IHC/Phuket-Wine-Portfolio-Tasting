@@ -26,18 +26,21 @@ export function AnnouncementsPage() {
   const { toast } = useToast();
   const [ann, setAnn] = useState<Announcement | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    api.getAnnouncement().then((data) => { setAnn(data); setLoading(false); });
+    api.getAnnouncement()
+      .then((data) => { setAnn(data); setLoading(false); })
+      .catch(() => { setLoadError(true); setLoading(false); });
   }, []);
 
   const set = (patch: Partial<Announcement>) => setAnn((a) => (a ? { ...a, ...patch } : a));
 
   const addImage = async (file: File) => {
     if (!ann) return;
-    const url = await api.uploadImage(file);
+    const url = await api.uploadImage(file, 'Banners');
     set({ banners: [...ann.banners, { id: 'banner' + Date.now(), url }] });
   };
 
@@ -57,6 +60,7 @@ export function AnnouncementsPage() {
     }
   };
 
+  if (loadError) return <p className="text-muted">{t('loadErrorMessage')}</p>;
   if (loading || !ann) return <p className="text-muted">{t('loading')}</p>;
 
   return (
@@ -112,7 +116,7 @@ export function AnnouncementsPage() {
       <div style={{ marginTop: 20 }}>
         <div className="card-title">{t('bannerImagesTitle')}</div>
         <div className="text-muted" style={{ fontSize: 12, marginBottom: 10 }}>
-          {t('bannerRecommendedSizeLabel')} ({t(ASPECT_OPTIONS.find((o) => o.key === ann.bannerAspect)!.labelKey)}): {BANNER_RECOMMENDED_PX[ann.bannerAspect]}
+          {t('bannerRecommendedSizeLabel')} ({t((ASPECT_OPTIONS.find((o) => o.key === ann.bannerAspect) || ASPECT_OPTIONS[0]).labelKey)}): {BANNER_RECOMMENDED_PX[ann.bannerAspect] || BANNER_RECOMMENDED_PX['16/9']}
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {ann.banners.map((b, i) => (
@@ -123,7 +127,7 @@ export function AnnouncementsPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                     <span className="text-muted" style={{ fontSize: 11 }}>Banner {i + 1}</span>
-                    <span className="text-muted" style={{ fontSize: 10 }}>{BANNER_RECOMMENDED_PX[ann.bannerAspect]}</span>
+                    <span className="text-muted" style={{ fontSize: 10 }}>{BANNER_RECOMMENDED_PX[ann.bannerAspect] || BANNER_RECOMMENDED_PX['16/9']}</span>
                   </div>
                 )}
               </div>

@@ -1,8 +1,29 @@
-import type { Announcement, DashboardStats, FormField, Registration, AdminUser, Session } from './types';
+import type { Announcement, BannerAspect, DashboardStats, EventRound, FormField, Registration, AdminUser, Session } from './types';
 import { mockStore } from './mockStore';
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 const USE_MOCK = !API_URL;
+
+const VALID_ASPECTS: BannerAspect[] = ['16/9', '1/1', '4/3', '9/16'];
+
+/** Guards against malformed/legacy backend or cached data (e.g. a missing
+ * or unrecognized bannerAspect) crashing the UI — always returns a
+ * well-formed Announcement. */
+function normalizeAnnouncement(a: Partial<Announcement> | null | undefined): Announcement {
+  return {
+    textTh: a?.textTh || '',
+    textEn: a?.textEn || '',
+    eventDate: a?.eventDate || '',
+    eventStartTime: a?.eventStartTime || '',
+    eventEndTime: a?.eventEndTime || '',
+    eventVenue: a?.eventVenue || '',
+    banners: Array.isArray(a?.banners) ? a.banners : [],
+    bannerAspect: VALID_ASPECTS.includes(a?.bannerAspect as BannerAspect) ? (a!.bannerAspect as BannerAspect) : '16/9',
+    startDate: a?.startDate || '',
+    endDate: a?.endDate || '',
+    published: a?.published !== false,
+  };
+}
 
 async function apiGet<T>(action: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(API_URL!);
@@ -55,6 +76,21 @@ function rawRegToRegistration(raw: any): Registration {
     status: (raw.Status || 'pending') as Registration['status'],
     rejectReason: raw.RejectReason || '',
     submittedAt: raw.Timestamp ? String(raw.Timestamp) : '',
+    roundId: raw.RoundId || '',
+    roundName: raw.RoundName || '',
+  };
+}
+
+function rawRoundToEventRound(raw: any): EventRound {
+  return {
+    id: raw.Id || String(raw._row ?? ''),
+    name: raw.Name || '',
+    date: raw.Date || '',
+    startTime: raw.StartTime || '',
+    endTime: raw.EndTime || '',
+    venue: raw.Venue || '',
+    capacity: Number(raw.Capacity) || 0,
+    status: (raw.Status || 'closed') as EventRound['status'],
   };
 }
 
@@ -82,21 +118,21 @@ export const api = {
   },
 
   async getAnnouncement(): Promise<Announcement> {
-    if (USE_MOCK) return mockStore.getAnnouncement();
+    if (USE_MOCK) return normalizeAnnouncement(mockStore.getAnnouncement());
     const raw = await apiGet<any>('getAnnouncement');
-    return {
-      textTh: raw.textTh || raw.text || '',
-      textEn: raw.textEn || '',
-      eventDate: raw.eventDate || '',
-      eventStartTime: raw.eventStartTime || '',
-      eventEndTime: raw.eventEndTime || '',
-      eventVenue: raw.eventVenue || '',
+    return normalizeAnnouncement({
+      textTh: raw.textTh || raw.text,
+      textEn: raw.textEn,
+      eventDate: raw.eventDate,
+      eventStartTime: raw.eventStartTime,
+      eventEndTime: raw.eventEndTime,
+      eventVenue: raw.eventVenue,
       banners: (raw.imageUrls || []).map((url: string, i: number) => ({ id: 'banner' + i, url })),
-      bannerAspect: raw.bannerAspect || '16/9',
-      startDate: raw.startDate || '',
-      endDate: raw.endDate || '',
-      published: raw.published !== false,
-    };
+      bannerAspect: raw.bannerAspect,
+      startDate: raw.startDate,
+      endDate: raw.endDate,
+      published: raw.published,
+    });
   },
 
   async getUsers(): Promise<AdminUser[]> {
@@ -129,9 +165,31 @@ export const api = {
     return { name: res.name, phone: res.phone, role: res.role };
   },
 
+  async getRounds(): Promise<EventRound[]> {
+    if (USE_MOCK) return mockStore.getRounds();
+    const raw = await apiGet<any[]>('getRounds');
+    return raw.map(rawRoundToEventRound);
+  },
+
+  async addRound(round: Omit<EventRound, 'id'>): Promise<string> {
+    if (USE_MOCK) return mockStore.addRound(round);
+    const res = await apiPost<{ ok: boolean; id: string }>('addRound', round);
+    return res.id;
+  },
+
+  async updateRound(id: string, patch: Partial<EventRound>): Promise<void> {
+    if (USE_MOCK) return mockStore.updateRound(id, patch);
+    await apiPost('updateRound', { id, ...patch });
+  },
+
+  async deleteRound(id: string): Promise<void> {
+    if (USE_MOCK) return mockStore.deleteRound(id);
+    await apiPost('deleteRound', { id });
+  },
+
   async submitRegistration(payload: {
     name: string; phone: string; email: string; area: string; arrival: string; source: string;
-    wines: string[]; prices: string[]; amount: number; slip?: File;
+    wines: string[]; prices: string[]; amount: number; roundId: string; roundName: string; slip?: File;
   }): Promise<string> {
     if (USE_MOCK) {
       let slipUrl = '';
@@ -188,11 +246,11 @@ export const api = {
     });
   },
 
-  async uploadImage(file: File): Promise<string> {
+  async uploadImage(file: File, folder?: string): Promise<string> {
     if (USE_MOCK) return URL.createObjectURL(file);
     const { base64, mimeType } = await fileToBase64(file);
     const res = await apiPost<{ ok: boolean; url: string }>('uploadImage', {
-      base64, mimeType, fileName: file.name,
+      base64, mimeType, fileName: file.name, folder,
     });
     return res.url;
   },

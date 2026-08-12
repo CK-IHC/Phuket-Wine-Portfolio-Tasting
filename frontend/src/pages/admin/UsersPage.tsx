@@ -16,7 +16,9 @@ export function UsersPage() {
   const [newUser, setNewUser] = useState({ name: '', phone: '', role: 'Staff' as AdminUser['role'] });
 
   useEffect(() => {
-    api.getUsers().then((data) => { setUsers(data); setLoading(false); });
+    api.getUsers()
+      .then((data) => { setUsers(data); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   const toggleActive = async (u: AdminUser) => {

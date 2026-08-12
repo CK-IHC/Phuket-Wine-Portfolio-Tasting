@@ -16,6 +16,21 @@ export interface Registration {
   status: RegistrationStatus;
   rejectReason?: string;
   submittedAt: string;
+  roundId: string;
+  roundName: string;
+}
+
+export type RoundStatus = 'open' | 'closed';
+
+export interface EventRound {
+  id: string;
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  capacity: number;
+  status: RoundStatus;
 }
 
 export type FieldType =

@@ -9,6 +9,7 @@ import { RegisterPage } from './pages/user/RegisterPage';
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { DashboardPage } from './pages/admin/DashboardPage';
+import { RoundsPage } from './pages/admin/RoundsPage';
 import { RegistrationListPage } from './pages/admin/RegistrationListPage';
 import { SlipVerificationPage } from './pages/admin/SlipVerificationPage';
 import { FormResponsesPage } from './pages/admin/FormResponsesPage';
@@ -39,6 +40,7 @@ export default function App() {
                   >
                     <Route index element={<Navigate to="dashboard" replace />} />
                     <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="rounds" element={<RoundsPage />} />
                     <Route path="list" element={<RegistrationListPage />} />
                     <Route path="verify" element={<SlipVerificationPage />} />
                     <Route path="responses" element={<FormResponsesPage />} />

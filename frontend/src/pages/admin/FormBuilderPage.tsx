@@ -36,7 +36,9 @@ export function FormBuilderPage() {
   const [previewAnswers, setPreviewAnswers] = useState<Record<string, string | string[] | undefined>>({});
 
   useEffect(() => {
-    api.getFormFields().then((data) => { setFields(data); setLoading(false); });
+    api.getFormFields()
+      .then((data) => { setFields(data); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   const selected = fields.find((f) => f.id === selectedId) || null;

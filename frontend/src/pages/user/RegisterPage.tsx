@@ -8,7 +8,7 @@ import { Blueprint } from '../../components/ui/Blueprint';
 import { DynamicFormField, type FieldValue } from '../../components/DynamicFormField';
 import { api } from '../../lib/api';
 import { buildQrCardBlob } from '../../lib/qrCard';
-import type { FormField } from '../../lib/types';
+import type { EventRound, FormField } from '../../lib/types';
 
 export function RegisterPage() {
   const { t, lang } = useLanguage();
@@ -16,6 +16,9 @@ export function RegisterPage() {
   const navigate = useNavigate();
 
   const [fields, setFields] = useState<FormField[]>([]);
+  const [rounds, setRounds] = useState<EventRound[]>([]);
+  const [loadingRounds, setLoadingRounds] = useState(true);
+  const [selectedRoundId, setSelectedRoundId] = useState('');
   const [answers, setAnswers] = useState<Record<string, FieldValue>>({});
   const [slipFile, setSlipFile] = useState<File | null>(null);
   const [slipPreview, setSlipPreview] = useState<string | null>(null);
@@ -25,7 +28,18 @@ export function RegisterPage() {
 
   useEffect(() => {
     api.getFormFields().then(setFields).catch(() => {});
+    api.getRounds()
+      .then((data) => {
+        setRounds(data);
+        const open = data.filter((r) => r.status === 'open');
+        if (open.length === 1) setSelectedRoundId(open[0].id);
+        setLoadingRounds(false);
+      })
+      .catch(() => setLoadingRounds(false));
   }, []);
+
+  const openRounds = rounds.filter((r) => r.status === 'open');
+  const selectedRound = openRounds.find((r) => r.id === selectedRoundId) || null;
 
   const setAnswer = (id: string, value: FieldValue) => setAnswers((s) => ({ ...s, [id]: value }));
 
@@ -64,6 +78,10 @@ export function RegisterPage() {
   };
 
   const submit = async () => {
+    if (openRounds.length > 1 && !selectedRound) {
+      setError(t('chooseRoundLabel'));
+      return;
+    }
     for (const f of fields) {
       if (!f.required || f.type === 'qr') continue;
       const v = answers[f.id];
@@ -92,6 +110,8 @@ export function RegisterPage() {
         wines: getArr('f8'),
         prices: getArr('f9'),
         amount: 1500,
+        roundId: selectedRound?.id || '',
+        roundName: selectedRound?.name || '',
         slip: slipFile,
       });
       setRefNo(newRefNo);
@@ -123,6 +143,35 @@ export function RegisterPage() {
     );
   }
 
+  if (loadingRounds) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+        <nav className="nav" style={{ borderBottom: '1px solid var(--color-divider)' }}>
+          <Button variant="ghost" onClick={() => navigate('/')}>{t('backHome')}</Button>
+          <LangToggle />
+        </nav>
+        <p className="text-muted" style={{ textAlign: 'center', marginTop: 60 }}>{t('loading')}</p>
+      </div>
+    );
+  }
+
+  if (openRounds.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+        <nav className="nav" style={{ borderBottom: '1px solid var(--color-divider)' }}>
+          <Button variant="ghost" onClick={() => navigate('/')}>{t('backHome')}</Button>
+          <LangToggle />
+        </nav>
+        <div style={{ maxWidth: 480, margin: '80px auto', padding: '0 16px' }}>
+          <Blueprint className="card" style={{ textAlign: 'center', gap: 10, padding: '32px 20px' }}>
+            <p>{t('noRoundOpenMessage')}</p>
+            <Button variant="secondary" onClick={() => navigate('/')}>{t('backHomeBtn')}</Button>
+          </Blueprint>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <nav className="nav" style={{ borderBottom: '1px solid var(--color-divider)' }}>
@@ -135,6 +184,18 @@ export function RegisterPage() {
           <h1 style={{ marginBottom: 4 }}>{t('formTitle')}</h1>
           <p className="text-muted">{t('formSubtitle')}</p>
         </div>
+
+        {openRounds.length > 1 && (
+          <div className="field">
+            <label style={{ fontSize: 17, fontWeight: 700 }}>{t('chooseRoundLabel')} *</label>
+            <select className="input" value={selectedRoundId} onChange={(e) => setSelectedRoundId(e.target.value)}>
+              <option value="">…</option>
+              {openRounds.map((r) => (
+                <option key={r.id} value={r.id}>{r.name} — {r.date}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {fields.map((f) => (
           <DynamicFormField

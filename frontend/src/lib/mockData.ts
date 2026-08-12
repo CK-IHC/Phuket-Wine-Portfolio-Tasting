@@ -1,4 +1,4 @@
-import type { Announcement, FormField, Registration, AdminUser } from './types';
+import type { Announcement, EventRound, FormField, Registration, AdminUser } from './types';
 
 export const WINE_OPTIONS = [
   'Red – Bordeaux', 'Red – Burgundy', 'Red – New World', 'White – Chardonnay',
@@ -41,11 +41,26 @@ function pickMany<T>(arr: T[], seed: number, count: number): T[] {
   return Array.from(new Set(out));
 }
 
+export function seedRounds(): EventRound[] {
+  return [
+    { id: 'round-2024', name: 'Phuket Wine Portfolio Tasting 2024', date: '2024-09-14', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed' },
+    { id: 'round-2025', name: 'Phuket Wine Portfolio Tasting 2025', date: '2025-09-13', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed' },
+    { id: 'round-2026', name: 'Phuket Wine Portfolio Tasting 2026', date: '2026-09-20', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 150, status: 'open' },
+  ];
+}
+
+const ROUND_ID_BY_YEAR: Record<number, string> = { 2024: 'round-2024', 2025: 'round-2025', 2026: 'round-2026' };
+const ROUND_NAME_BY_YEAR: Record<number, string> = {
+  2024: 'Phuket Wine Portfolio Tasting 2024',
+  2025: 'Phuket Wine Portfolio Tasting 2025',
+  2026: 'Phuket Wine Portfolio Tasting 2026',
+};
+
 export function seedRegistrations(): Registration[] {
   const regs: Registration[] = [];
   let seq = 1;
-  // Monthly registration counts across three editions of the annual event,
-  // rising toward each year's September tasting date.
+  // Monthly registration counts across three editions (rounds) of the
+  // annual event, rising toward each year's September tasting date.
   const monthlyCounts: [number, number, number][] = [
     [2024, 3, 2], [2024, 4, 3], [2024, 5, 4], [2024, 6, 5], [2024, 7, 8], [2024, 8, 11], [2024, 9, 4],
     [2025, 2, 2], [2025, 3, 3], [2025, 4, 4], [2025, 5, 6], [2025, 6, 7], [2025, 7, 9], [2025, 8, 12], [2025, 9, 5],
@@ -76,6 +91,8 @@ export function seedRegistrations(): Registration[] {
         status,
         amount: 1200 + (seed % 4) * 200,
         submittedAt,
+        roundId: ROUND_ID_BY_YEAR[year],
+        roundName: ROUND_NAME_BY_YEAR[year],
       });
       seq += 1;
     }

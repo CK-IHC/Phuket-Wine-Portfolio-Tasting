@@ -7,11 +7,12 @@
 const SHEET_ID = '1vPqZka3cCGXR_hYUlAn4WfbowvNG6Pvv1_VTdRnM1so';
 const FOLDER_ID = '1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X';
 
-const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason'];
+const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName'];
 // No password column — admin/staff sign in with phone number only (matched against Active users).
 const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
 const ANNOUNCE_HEADERS = ['TextTh','TextEn','EventDate','EventStartTime','EventEndTime','EventVenue','ImageUrls','BannerAspect','StartDate','EndDate','Published'];
 const FORM_HEADERS = ['FieldsJson'];
+const ROUND_HEADERS = ['Id','Name','Date','StartTime','EndTime','Venue','Capacity','Status'];
 
 function getSS() { return SpreadsheetApp.openById(SHEET_ID); }
 
@@ -50,6 +51,7 @@ function doGet(e) {
     if (action === 'getAnnouncement') return json({ ok: true, data: readAnnouncement() });
     if (action === 'getUsers') return json({ ok: true, data: readUsers() });
     if (action === 'getDashboardStats') return json({ ok: true, data: computeStats() });
+    if (action === 'getRounds') return json({ ok: true, data: readRounds() });
     return json({ ok: false, error: 'unknown action: ' + action });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -74,6 +76,9 @@ function doPost(e) {
       case 'addUser': result = addUser(payload); break;
       case 'updateUser': result = updateUser(payload); break;
       case 'deleteUser': result = deleteUser(payload.phone); break;
+      case 'addRound': result = addRound(payload); break;
+      case 'updateRound': result = updateRound(payload); break;
+      case 'deleteRound': result = deleteRound(payload.id); break;
       default: result = { ok: false, error: 'unknown action: ' + action };
     }
     return json(result);
@@ -95,8 +100,18 @@ function nextRefNo() {
   return beYear + '-' + String(count + 1).padStart(3, '0');
 }
 
-function saveBase64ToDrive(base64, fileName, mimeType) {
-  const folder = DriveApp.getFolderById(FOLDER_ID);
+function getOrCreateSubfolder_(parentFolder, name) {
+  const existing = parentFolder.getFoldersByName(name);
+  if (existing.hasNext()) return existing.next();
+  return parentFolder.createFolder(name);
+}
+
+/** subfolderName is optional — e.g. "Banners" keeps banner uploads out of
+ * the flat root folder alongside payment slips. Omit it to save directly
+ * into FOLDER_ID (used for slips and QR uploads). */
+function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
+  let folder = DriveApp.getFolderById(FOLDER_ID);
+  if (subfolderName) folder = getOrCreateSubfolder_(folder, subfolderName);
   const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
   const file = folder.createFile(blob);
   // ANYONE_WITH_LINK keeps slip review simple for the admin team. For stricter
@@ -114,7 +129,7 @@ function submitRegistration(p) {
   sh.appendRow([
     new Date(), refNo, p.name || '', p.phone || '', p.email || '', p.area || '',
     p.arrival || '', p.source || '', (p.wines || []).join(', '), (p.prices || []).join(', '),
-    slipUrl, p.amount || 0, 'pending', '',
+    slipUrl, p.amount || 0, 'pending', '', p.roundId || '', p.roundName || '',
   ]);
   return { ok: true, refNo };
 }
@@ -139,10 +154,11 @@ function setStatus(refNo, status, reason) {
 function editRegistration(p) {
   const found = findRegRow_(p.refNo);
   if (!found) return { ok: false, error: 'not found' };
-  ['Name','Phone','Email','Area','Arrival','Source'].forEach(key => {
-    if (p[key.toLowerCase()] !== undefined) {
+  ['Name','Phone','Email','Area','Arrival','Source','Amount','RoundId','RoundName'].forEach(key => {
+    const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
+    if (p[lowerKey] !== undefined) {
       const col = found.headers.indexOf(key) + 1;
-      found.sh.getRange(found.rowIndex, col).setValue(p[key.toLowerCase()]);
+      found.sh.getRange(found.rowIndex, col).setValue(p[lowerKey]);
     }
   });
   return { ok: true };
@@ -247,8 +263,53 @@ function saveAnnouncement(p) {
 }
 
 function uploadImage(p) {
-  const url = saveBase64ToDrive(p.base64, p.fileName || ('image_' + Date.now() + '.jpg'), p.mimeType || 'image/jpeg');
+  const url = saveBase64ToDrive(p.base64, p.fileName || ('image_' + Date.now() + '.jpg'), p.mimeType || 'image/jpeg', p.folder);
   return { ok: true, url };
+}
+
+// ───────────────────────── Rounds ─────────────────────────
+//
+// Each event edition/session is a "round" that admins open or close for
+// registration. Registrations store which round they belong to (RoundId/
+// RoundName on the Registrations sheet).
+
+function readRounds() {
+  return sheetToObjects(getSheet('Rounds', ROUND_HEADERS));
+}
+
+function addRound(p) {
+  const sh = getSheet('Rounds', ROUND_HEADERS);
+  const id = 'round-' + Date.now();
+  sh.appendRow([id, p.name || '', p.date || '', p.startTime || '', p.endTime || '', p.venue || '', p.capacity || 0, p.status || 'closed']);
+  return { ok: true, id };
+}
+
+function updateRound(p) {
+  const sh = getSheet('Rounds', ROUND_HEADERS);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(p.id)) {
+      const headers = data[0];
+      ['Name','Date','StartTime','EndTime','Venue','Capacity','Status'].forEach(key => {
+        const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
+        if (p[lowerKey] !== undefined) {
+          const col = headers.indexOf(key) + 1;
+          sh.getRange(i + 1, col).setValue(p[lowerKey]);
+        }
+      });
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'not found' };
+}
+
+function deleteRound(id) {
+  const sh = getSheet('Rounds', ROUND_HEADERS);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) { sh.deleteRow(i + 1); return { ok: true }; }
+  }
+  return { ok: false, error: 'not found' };
 }
 
 // ───────────────────────── Form Builder ─────────────────────────

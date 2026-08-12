@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
-import type { Registration } from '../../lib/types';
+import type { EventRound, Registration } from '../../lib/types';
 import { formatSubmitted } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Lightbox } from '../../components/ui/Lightbox';
@@ -16,16 +16,27 @@ export function SlipVerificationPage() {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [slipReg, setSlipReg] = useState<Registration | null>(null);
+  const [search, setSearch] = useState('');
+  const [rounds, setRounds] = useState<EventRound[]>([]);
+  const [roundFilter, setRoundFilter] = useState('all');
 
   useEffect(() => {
-    api.getRegistrations().then((data) => {
-      setRegs(data);
-      setAmounts(Object.fromEntries(data.map((r) => [r.id, r.amount ? String(r.amount) : ''])));
-      setLoading(false);
-    });
+    api.getRegistrations()
+      .then((data) => {
+        setRegs(data);
+        setAmounts(Object.fromEntries(data.map((r) => [r.id, r.amount ? String(r.amount) : ''])));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+    api.getRounds().then(setRounds).catch(() => {});
   }, []);
 
-  const pending = regs.filter((r) => r.status === 'pending');
+  const allPending = regs.filter((r) => r.status === 'pending');
+  const q = search.trim().toLowerCase();
+  const pending = allPending.filter((r) =>
+    (roundFilter === 'all' || r.roundId === roundFilter) &&
+    (!q || r.name.toLowerCase().includes(q) || r.phone.includes(q) || r.refNo.toLowerCase().includes(q))
+  );
 
   const saveAmount = async (r: Registration) => {
     const amount = Number(amounts[r.id]) || 0;
@@ -55,7 +66,26 @@ export function SlipVerificationPage() {
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>{t('verifyTitle')}</h2>
-      {pending.length === 0 && <p className="text-muted">{t('noPending')}</p>}
+      {allPending.length > 0 && (
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+          <input
+            className="input"
+            style={{ maxWidth: 260 }}
+            type="text"
+            placeholder={t('searchPlaceholder')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {rounds.length > 0 && (
+            <select className="input" style={{ width: 'auto' }} value={roundFilter} onChange={(e) => setRoundFilter(e.target.value)}>
+              <option value="all">{t('filterAllRounds')}</option>
+              {rounds.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          )}
+        </div>
+      )}
+      {allPending.length === 0 && <p className="text-muted">{t('noPending')}</p>}
+      {allPending.length > 0 && pending.length === 0 && <p className="text-muted">{t('noSearchResults')}</p>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: 14 }}>
         {pending.map((r) => (
           <div key={r.id} className="card" style={{ gap: 10 }}>
@@ -72,6 +102,7 @@ export function SlipVerificationPage() {
             <div>
               <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16 }}>{r.refNo} — {r.name}</div>
               <div className="text-muted" style={{ fontSize: 12 }}>{r.phone} · {t('submittedLabel')} {formatSubmitted(r.submittedAt, lang)}</div>
+              {r.roundName && <div className="text-muted" style={{ fontSize: 12 }}>{t('colRound')}: {r.roundName}</div>}
             </div>
             <div className="field" style={{ margin: 0 }}>
               <label>{t('amountTransferredLabel')}</label>

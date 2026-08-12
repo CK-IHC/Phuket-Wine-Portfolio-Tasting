@@ -7,6 +7,7 @@ import type { TrKey } from '../../i18n/translations';
 
 const TABS: { path: string; labelKey: TrKey }[] = [
   { path: 'dashboard', labelKey: 'tabDashboard' },
+  { path: 'rounds', labelKey: 'tabRounds' },
   { path: 'list', labelKey: 'tabList' },
   { path: 'verify', labelKey: 'tabVerify' },
   { path: 'responses', labelKey: 'tabResponses' },

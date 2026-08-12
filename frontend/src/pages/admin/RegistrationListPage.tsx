@@ -3,8 +3,8 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { useToast } from '../../context/ToastContext';
 import { usePrint } from '../../context/PrintContext';
 import { api } from '../../lib/api';
-import type { Registration, RegistrationStatus } from '../../lib/types';
-import { formatSubmitted } from '../../lib/format';
+import type { EventRound, Registration, RegistrationStatus } from '../../lib/types';
+import { formatSubmitted, parseTimestamp } from '../../lib/format';
 import { exportRowsToExcel } from '../../lib/exportExcel';
 import { Button } from '../../components/ui/Button';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
@@ -22,9 +22,13 @@ export function RegistrationListPage() {
   const { printNow } = usePrint();
 
   const [regs, setRegs] = useState<Registration[]>([]);
+  const [rounds, setRounds] = useState<EventRound[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [roundFilter, setRoundFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailReg, setDetailReg] = useState<Registration | null>(null);
   const [slipReg, setSlipReg] = useState<Registration | null>(null);
@@ -33,16 +37,31 @@ export function RegistrationListPage() {
   const [reportFrom, setReportFrom] = useState('2026-08-01');
   const [reportTo, setReportTo] = useState('2026-08-31');
 
-  const load = () => api.getRegistrations().then((data) => { setRegs(data); setLoading(false); });
-  useEffect(() => { load(); }, []);
+  const load = () => api.getRegistrations()
+    .then((data) => { setRegs(data); setLoading(false); })
+    .catch(() => setLoading(false));
+  useEffect(() => {
+    load();
+    api.getRounds().then(setRounds).catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return regs.filter((r) =>
-      (statusFilter === 'all' || r.status === statusFilter) &&
-      (!q || r.name.toLowerCase().includes(q) || r.phone.includes(q) || r.refNo.toLowerCase().includes(q))
-    );
-  }, [regs, search, statusFilter]);
+    const fromD = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+    const toD = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
+    return regs.filter((r) => {
+      if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+      if (roundFilter !== 'all' && r.roundId !== roundFilter) return false;
+      if (q && !(r.name.toLowerCase().includes(q) || r.phone.includes(q) || r.refNo.toLowerCase().includes(q))) return false;
+      if (fromD || toD) {
+        const d = parseTimestamp(r.submittedAt);
+        if (!d) return false;
+        if (fromD && d < fromD) return false;
+        if (toD && d > toD) return false;
+      }
+      return true;
+    });
+  }, [regs, search, statusFilter, roundFilter, dateFrom, dateTo]);
 
   const filteredIds = filtered.map((r) => r.id);
   const isAllFilteredSelected = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
@@ -70,8 +89,7 @@ export function RegistrationListPage() {
 
   const printSource = () => {
     if (selectedIds.size) return regs.filter((r) => selectedIds.has(r.id));
-    if (statusFilter !== 'all') return regs.filter((r) => r.status === statusFilter);
-    return regs;
+    return filtered;
   };
 
   const runPrint = () => {
@@ -83,13 +101,14 @@ export function RegistrationListPage() {
         { key: 'refNo', label: t('colRef') },
         { key: 'name', label: t('colName') },
         { key: 'phone', label: t('colPhone') },
+        { key: 'round', label: t('colRound') },
         { key: 'area', label: t('colArea') },
         { key: 'wines', label: t('colWines') },
         { key: 'amount', label: t('colAmount') },
         { key: 'status', label: t('colStatus') },
       ],
       rows: rows.map((r) => ({
-        refNo: r.refNo, name: r.name, phone: r.phone, area: r.area,
+        refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '-', area: r.area,
         wines: r.wines.join(', ') || '-', amount: `฿${r.amount.toLocaleString()}`,
         status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
       })),
@@ -100,13 +119,14 @@ export function RegistrationListPage() {
     const rows = selectedIds.size ? regs.filter((r) => selectedIds.has(r.id)) : filtered;
     exportRowsToExcel(
       rows.map((r) => ({
-        refNo: r.refNo, name: r.name, phone: r.phone, email: r.email, area: r.area,
+        refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '', email: r.email, area: r.area,
         arrival: r.arrival, source: r.source, wines: r.wines.join(', '), prices: r.prices.join(', '),
         amount: r.amount, status: r.status,
       })),
       [
         { key: 'refNo', label: t('colRef') }, { key: 'name', label: t('colName') },
-        { key: 'phone', label: t('colPhone') }, { key: 'email', label: t('colEmail') },
+        { key: 'phone', label: t('colPhone') }, { key: 'round', label: t('colRound') },
+        { key: 'email', label: t('colEmail') },
         { key: 'area', label: t('colArea') }, { key: 'arrival', label: t('colArrival') },
         { key: 'source', label: t('colSource') }, { key: 'wines', label: t('colWines') },
         { key: 'prices', label: t('colPrices') }, { key: 'amount', label: t('colAmount') },
@@ -143,7 +163,7 @@ export function RegistrationListPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
         <input className="input" style={{ maxWidth: 260 }} type="text" placeholder={t('searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
         <SegmentedControl
           options={[
@@ -155,6 +175,20 @@ export function RegistrationListPage() {
           value={statusFilter}
           onChange={setStatusFilter}
         />
+        {rounds.length > 0 && (
+          <select className="input" style={{ width: 'auto' }} value={roundFilter} onChange={(e) => setRoundFilter(e.target.value)}>
+            <option value="all">{t('filterAllRounds')}</option>
+            {rounds.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        )}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input className="input" style={{ width: 'auto' }} type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title={t('reportFrom')} />
+          <span className="text-muted" style={{ fontSize: 12 }}>–</span>
+          <input className="input" style={{ width: 'auto' }} type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title={t('reportTo')} />
+          {(dateFrom || dateTo) && (
+            <button className="btn btn-ghost" onClick={() => { setDateFrom(''); setDateTo(''); }}>{t('clearFilterBtn')}</button>
+          )}
+        </div>
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -162,7 +196,7 @@ export function RegistrationListPage() {
           <thead>
             <tr>
               <th><input type="checkbox" checked={isAllFilteredSelected} onChange={toggleSelectAllFiltered} /></th>
-              <th>{t('colRef')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th>
+              <th>{t('colRef')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th><th>{t('colRound')}</th>
               <th>{t('colStatus')}</th><th>{t('colSlip')}</th><th /><th />
             </tr>
           </thead>
@@ -173,6 +207,7 @@ export function RegistrationListPage() {
                 <td>{r.refNo}</td>
                 <td>{r.name}</td>
                 <td>{r.phone}</td>
+                <td>{r.roundName || '-'}</td>
                 <td><StatusTag status={r.status} /></td>
                 <td><button className="btn btn-ghost" onClick={() => setSlipReg(r)}>{t('viewSlipBtn')}</button></td>
                 <td><button className="btn btn-ghost" onClick={() => setDetailReg(r)}>{t('viewDetailBtn')}</button></td>
@@ -188,6 +223,7 @@ export function RegistrationListPage() {
 
       {detailReg && (
         <Dialog title={`${detailReg.refNo} — ${detailReg.name}`} onClose={() => setDetailReg(null)} maxWidth={520} actions={<Button variant="secondary" onClick={() => setDetailReg(null)}>{t('closeBtn')}</Button>}>
+          <div>{t('colRound')}: {detailReg.roundName || '-'}</div>
           <div>{t('detailPhone')} {detailReg.phone}</div>
           <div>{t('detailEmail')} {detailReg.email}</div>
           <div>{t('detailArea')} {detailReg.area}</div>

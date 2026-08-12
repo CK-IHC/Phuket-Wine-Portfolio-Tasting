@@ -30,12 +30,14 @@ export function DashboardPage() {
   const [dateTo, setDateTo] = useState(todayISO());
 
   useEffect(() => {
-    api.getRegistrations().then((data) => {
-      setRegs(data);
-      const years = availableYears(data);
-      setMonthlyYear(years[years.length - 1]);
-      setLoading(false);
-    });
+    api.getRegistrations()
+      .then((data) => {
+        setRegs(data);
+        const years = availableYears(data);
+        setMonthlyYear(years[years.length - 1]);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const total = regs.length;

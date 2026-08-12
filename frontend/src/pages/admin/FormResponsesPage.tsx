@@ -20,7 +20,9 @@ export function FormResponsesPage() {
   const [editingReg, setEditingReg] = useState<Registration | null>(null);
 
   useEffect(() => {
-    api.getRegistrations().then((data) => { setRegs(data); setLoading(false); });
+    api.getRegistrations()
+      .then((data) => { setRegs(data); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   const toggleSelect = (id: string) => {
@@ -37,12 +39,13 @@ export function FormResponsesPage() {
       columns: [
         { key: 'refNo', label: t('colRef') }, { key: 'email', label: t('colEmail') },
         { key: 'name', label: t('colName') }, { key: 'phone', label: t('colPhone') },
+        { key: 'round', label: t('colRound') },
         { key: 'area', label: t('colArea') }, { key: 'arrival', label: t('colArrival') },
         { key: 'source', label: t('colSource') }, { key: 'wines', label: t('colWines') },
         { key: 'amount', label: t('colAmountTransferred') }, { key: 'status', label: t('colStatus') },
       ],
       rows: regs.map((r) => ({
-        refNo: r.refNo, email: r.email, name: r.name, phone: r.phone, area: r.area,
+        refNo: r.refNo, email: r.email, name: r.name, phone: r.phone, round: r.roundName || '-', area: r.area,
         arrival: r.arrival, source: r.source, wines: r.wines.join(', ') || '-', amount: `฿${r.amount.toLocaleString()}`,
         status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
       })),
@@ -53,12 +56,13 @@ export function FormResponsesPage() {
     const rows = selectedIds.size ? regs.filter((r) => selectedIds.has(r.id)) : regs;
     exportRowsToExcel(
       rows.map((r) => ({
-        refNo: r.refNo, email: r.email, name: r.name, phone: r.phone, area: r.area,
+        refNo: r.refNo, email: r.email, name: r.name, phone: r.phone, round: r.roundName || '', area: r.area,
         arrival: r.arrival, source: r.source, wines: r.wines.join(', '), amount: r.amount, status: r.status,
       })),
       [
         { key: 'refNo', label: t('colRef') }, { key: 'email', label: t('colEmail') },
         { key: 'name', label: t('colName') }, { key: 'phone', label: t('colPhone') },
+        { key: 'round', label: t('colRound') },
         { key: 'area', label: t('colArea') }, { key: 'arrival', label: t('colArrival') },
         { key: 'source', label: t('colSource') }, { key: 'wines', label: t('colWines') },
         { key: 'amount', label: t('colAmountTransferred') }, { key: 'status', label: t('colStatus') },
@@ -98,6 +102,7 @@ export function FormResponsesPage() {
             <tr>
               <th />
               <th>{t('colRef')}</th><th>{t('colEmail')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th>
+              <th>{t('colRound')}</th>
               <th>{t('colArea')}</th><th>{t('colArrival')}</th><th>{t('colSource')}</th>
               <th>{t('colWines')}</th><th>{t('colAmountTransferred')}</th><th>{t('colStatus')}</th><th />
             </tr>
@@ -107,6 +112,7 @@ export function FormResponsesPage() {
               <tr key={r.id}>
                 <td><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} /></td>
                 <td>{r.refNo}</td><td>{r.email}</td><td>{r.name}</td><td>{r.phone}</td>
+                <td>{r.roundName || '-'}</td>
                 <td>{r.area}</td><td>{r.arrival}</td><td>{r.source}</td>
                 <td>{r.wines.join(', ') || '-'}</td><td>฿{r.amount.toLocaleString()}</td>
                 <td><StatusTag status={r.status} /></td>
