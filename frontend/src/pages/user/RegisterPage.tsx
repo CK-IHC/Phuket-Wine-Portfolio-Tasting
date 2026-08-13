@@ -27,6 +27,7 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [refNo, setRefNo] = useState<string | null>(null);
+  const [qrCardUrl, setQrCardUrl] = useState<string | null>(null);
 
   useEffect(() => {
     api.getFormFields().then(setFields).catch(() => {});
@@ -69,18 +70,23 @@ export function RegisterPage() {
         caption: field.qrCaption,
         heading: 'Phuket Wine Portfolio Tasting',
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'payment-qr-card.png';
-      a.click();
-      URL.revokeObjectURL(url);
+      setQrCardUrl(URL.createObjectURL(blob));
     } catch {
-      const a = document.createElement('a');
-      a.href = field.qrUrl;
-      a.download = 'payment-qr.png';
-      a.click();
+      setQrCardUrl(field.qrUrl);
     }
+  };
+
+  const closeQrCard = () => {
+    if (qrCardUrl) URL.revokeObjectURL(qrCardUrl);
+    setQrCardUrl(null);
+  };
+
+  const saveQrCard = () => {
+    if (!qrCardUrl) return;
+    const a = document.createElement('a');
+    a.href = qrCardUrl;
+    a.download = 'payment-qr-card.png';
+    a.click();
   };
 
   const submit = async () => {
@@ -242,6 +248,19 @@ export function RegisterPage() {
           {submitting ? t('loading') : t('submitBtn')}
         </Button>
       </div>
+
+      {qrCardUrl && (
+        <div className="dialog-backdrop" onClick={closeQrCard}>
+          <div className="dialog" style={{ maxWidth: 'min(90vw, 380px)', alignItems: 'center', padding: 16, gap: 12 }} onClick={(e) => e.stopPropagation()}>
+            <img src={qrCardUrl} style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', display: 'block', borderRadius: 'var(--radius-md)' }} />
+            <p className="text-muted" style={{ fontSize: 12, textAlign: 'center', margin: 0 }}>{t('qrCardHint')}</p>
+            <div className="dialog-actions" style={{ width: '100%' }}>
+              <Button variant="secondary" onClick={closeQrCard}>{t('closeBtn')}</Button>
+              <Button variant="primary" onClick={saveQrCard}>{t('saveImageBtn')}</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

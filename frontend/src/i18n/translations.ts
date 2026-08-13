@@ -187,6 +187,8 @@ export const TR = {
   printSelectedBtn: { th: 'พิมพ์รายการที่เลือก', en: 'Print Selected' },
   downloadQrBtn: { th: 'ดาวน์โหลด QR Code ชำระเงิน', en: 'Download Payment QR Code' },
   toastNoQr: { th: 'ยังไม่มีรูป QR Code ให้ดาวน์โหลด', en: 'No QR code image to download yet' },
+  saveImageBtn: { th: 'บันทึกรูปภาพ', en: 'Save Image' },
+  qrCardHint: { th: 'แตะค้างที่รูปเพื่อบันทึก หรือกดปุ่มด้านล่าง', en: 'Long-press the image to save, or use the button below' },
   editRegTitle: { th: 'แก้ไขข้อมูลลงทะเบียน', en: 'Edit Registration' },
   filterDay: { th: 'รายวัน', en: 'Daily' },
   filterMonth: { th: 'รายเดือน', en: 'Monthly' },
