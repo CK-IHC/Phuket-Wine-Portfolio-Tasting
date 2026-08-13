@@ -10,18 +10,34 @@ const FOLDER_ID = '1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X';
 const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName','AnswersJson'];
 // No password column — admin/staff sign in with phone number only (matched against Active users).
 const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
-const ANNOUNCE_HEADERS = ['TextTh','TextEn','EventDate','EventStartTime','EventEndTime','EventVenue','ImageUrls','BannerAspect','StartDate','EndDate','Published'];
 const FORM_HEADERS = ['FieldsJson'];
-const ROUND_HEADERS = ['Id','Name','Date','StartTime','EndTime','Venue','Capacity','Status'];
+// A round is both the registerable session and its Home-page announcement —
+// creating one creates the other (see the Rounds section below).
+const ROUND_HEADERS = ['Id','Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','ImageUrls','BannerAspect','Published'];
 
 function getSS() { return SpreadsheetApp.openById(SHEET_ID); }
 
+/** Redeploying the Apps Script code never touches sheets that already exist —
+ * a sheet created by an earlier version of this file keeps its original
+ * header row forever. So whenever a phase adds a new column (e.g. ImageUrls,
+ * TextTh, Published on Rounds), every existing deployment's live sheet is
+ * silently missing it and reads/writes for that column go nowhere. Heal that
+ * here: append any headers this sheet doesn't have yet, in the same order
+ * they appear in the expected list, so appendRow's positional writes and
+ * name-based lookups both stay correct. */
 function getSheet(name, headers) {
   const ss = getSS();
   let sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);
     sh.appendRow(headers);
+    return sh;
+  }
+  const lastCol = sh.getLastColumn();
+  const existing = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  const missing = headers.filter((h) => existing.indexOf(h) === -1);
+  if (missing.length) {
+    sh.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
   }
   return sh;
 }
@@ -48,7 +64,6 @@ function doGet(e) {
   try {
     if (action === 'getRegistrations') return json({ ok: true, data: readRegistrations() });
     if (action === 'getFormFields') return json({ ok: true, data: readFormFields() });
-    if (action === 'getAnnouncement') return json({ ok: true, data: readAnnouncement() });
     if (action === 'getUsers') return json({ ok: true, data: readUsers() });
     if (action === 'getDashboardStats') return json({ ok: true, data: computeStats() });
     if (action === 'getRounds') return json({ ok: true, data: readRounds() });
@@ -72,7 +87,6 @@ function doPost(e) {
       case 'editRegistration': result = editRegistration(payload); break;
       case 'deleteRegistration': result = deleteRegistration(payload.refNo); break;
       case 'saveFormFields': result = saveFormFields(payload.fields); break;
-      case 'saveAnnouncement': result = saveAnnouncement(payload); break;
       case 'uploadImage': result = uploadImage(payload); break;
       case 'addUser': result = addUser(payload); break;
       case 'updateUser': result = updateUser(payload); break;
@@ -244,42 +258,6 @@ function deleteUser(phone) {
   return { ok: false, error: 'not found' };
 }
 
-// ───────────────────────── Announcements ─────────────────────────
-//
-// Single current announcement: Thai/English text, banner image URLs (comma
-// joined), banner aspect ratio, publish window and visibility toggle.
-
-function readAnnouncement() {
-  const rows = sheetToObjects(getSheet('Announcements', ANNOUNCE_HEADERS));
-  const row = rows[rows.length - 1];
-  if (!row) {
-    return {
-      textTh: '', textEn: '', eventDate: '', eventStartTime: '', eventEndTime: '', eventVenue: '',
-      imageUrls: [], bannerAspect: '16/9', startDate: '', endDate: '', published: true,
-    };
-  }
-  return {
-    textTh: row.TextTh || '', textEn: row.TextEn || '',
-    eventDate: row.EventDate || '', eventStartTime: row.EventStartTime || '', eventEndTime: row.EventEndTime || '',
-    eventVenue: row.EventVenue || '',
-    imageUrls: String(row.ImageUrls || '').split(',').filter(Boolean),
-    bannerAspect: row.BannerAspect || '16/9',
-    startDate: row.StartDate || '', endDate: row.EndDate || '',
-    published: row.Published !== false && row.Published !== 'FALSE',
-  };
-}
-
-function saveAnnouncement(p) {
-  const sh = getSheet('Announcements', ANNOUNCE_HEADERS);
-  if (sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
-  sh.appendRow([
-    p.textTh || '', p.textEn || '', p.eventDate || '', p.eventStartTime || '', p.eventEndTime || '', p.eventVenue || '',
-    (p.imageUrls || []).join(','), p.bannerAspect || '16/9',
-    p.startDate || '', p.endDate || '', p.published !== false,
-  ]);
-  return { ok: true };
-}
-
 function uploadImage(p) {
   const url = saveBase64ToDrive(p.base64, p.fileName || ('image_' + Date.now() + '.jpg'), p.mimeType || 'image/jpeg', p.folder);
   return { ok: true, url };
@@ -298,7 +276,10 @@ function readRounds() {
 function addRound(p) {
   const sh = getSheet('Rounds', ROUND_HEADERS);
   const id = 'round-' + Date.now();
-  sh.appendRow([id, p.name || '', p.date || '', p.startTime || '', p.endTime || '', p.venue || '', p.capacity || 0, p.status || 'closed']);
+  sh.appendRow([
+    id, p.name || '', p.date || '', p.startTime || '', p.endTime || '', p.venue || '', p.capacity || 0, p.status || 'closed',
+    p.textTh || '', p.textEn || '', (p.imageUrls || []).join(','), p.bannerAspect || '16/9', p.published !== false,
+  ]);
   return { ok: true, id };
 }
 
@@ -308,13 +289,12 @@ function updateRound(p) {
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === String(p.id)) {
       const headers = data[0];
-      ['Name','Date','StartTime','EndTime','Venue','Capacity','Status'].forEach(key => {
+      const setCol = (name, value) => sh.getRange(i + 1, headers.indexOf(name) + 1).setValue(value);
+      ['Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','BannerAspect','Published'].forEach(key => {
         const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
-        if (p[lowerKey] !== undefined) {
-          const col = headers.indexOf(key) + 1;
-          sh.getRange(i + 1, col).setValue(p[lowerKey]);
-        }
+        if (p[lowerKey] !== undefined) setCol(key, p[lowerKey]);
       });
+      if (p.imageUrls !== undefined) setCol('ImageUrls', (p.imageUrls || []).join(','));
       return { ok: true };
     }
   }

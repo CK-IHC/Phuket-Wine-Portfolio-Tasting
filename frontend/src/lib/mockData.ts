@@ -1,4 +1,4 @@
-import type { Announcement, EventRound, FormField, Registration, AdminUser } from './types';
+import type { EventRound, FormField, Registration, AdminUser } from './types';
 
 export const WINE_OPTIONS = [
   'Red – Bordeaux', 'Red – Burgundy', 'Red – New World', 'White – Chardonnay',
@@ -42,10 +42,16 @@ function pickMany<T>(arr: T[], seed: number, count: number): T[] {
 }
 
 export function seedRounds(): EventRound[] {
+  const textTh = 'ร่วมชิมไวน์คัดสรรกว่า 60 ชนิดจากทั่วโลก พร้อมพบปะตัวแทนผู้นำเข้าไวน์ชั้นนำของภูเก็ต';
+  const textEn = 'Taste over 60 curated wines from around the world and meet Phuket’s leading wine importers.';
+  const banners = () => [
+    { id: 'banner' + Date.now() + Math.random(), url: '' },
+    { id: 'banner' + Date.now() + Math.random(), url: '' },
+  ];
   return [
-    { id: 'round-2024', name: 'Phuket Wine Portfolio Tasting 2024', date: '2024-09-14', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed' },
-    { id: 'round-2025', name: 'Phuket Wine Portfolio Tasting 2025', date: '2025-09-13', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed' },
-    { id: 'round-2026', name: 'Phuket Wine Portfolio Tasting 2026', date: '2026-09-20', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 150, status: 'open' },
+    { id: 'round-2024', name: 'Phuket Wine Portfolio Tasting 2024', date: '2024-09-14', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
+    { id: 'round-2025', name: 'Phuket Wine Portfolio Tasting 2025', date: '2025-09-13', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
+    { id: 'round-2026', name: 'Phuket Wine Portfolio Tasting 2026', date: '2026-09-20', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 150, status: 'open', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
   ];
 }
 
@@ -102,26 +108,6 @@ export function seedRegistrations(): Registration[] {
     }
   }
   return regs.reverse();
-}
-
-export function seedAnnouncement(): Announcement {
-  return {
-    textTh: 'ร่วมชิมไวน์คัดสรรกว่า 60 ชนิดจากทั่วโลก พร้อมพบปะตัวแทนผู้นำเข้าไวน์ชั้นนำของภูเก็ต',
-    textEn: 'Taste over 60 curated wines from around the world and meet Phuket’s leading wine importers.',
-    eventDate: '2026-09-20',
-    eventStartTime: '18:00',
-    eventEndTime: '21:00',
-    eventVenue: 'The Slate, Phuket',
-    banners: [
-      { id: 'banner1', url: '' },
-      { id: 'banner2', url: '' },
-      { id: 'banner3', url: '' },
-    ],
-    bannerAspect: '16/9',
-    startDate: '2026-09-01',
-    endDate: '2026-09-20',
-    published: true,
-  };
 }
 
 export function seedUsers(): AdminUser[] {

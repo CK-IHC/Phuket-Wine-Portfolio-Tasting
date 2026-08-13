@@ -25,7 +25,16 @@ export interface Registration {
 }
 
 export type RoundStatus = 'open' | 'closed';
+export type BannerAspect = '16/9' | '1/1' | '4/3' | '9/16';
 
+export interface Banner {
+  id: string;
+  url: string;
+}
+
+/** A round is both a registerable event session and its home-page
+ * announcement — creating one creates the other, so admins manage both
+ * from a single form instead of two disconnected screens. */
 export interface EventRound {
   id: string;
   name: string;
@@ -35,6 +44,12 @@ export interface EventRound {
   venue: string;
   capacity: number;
   status: RoundStatus;
+  textTh: string;
+  textEn: string;
+  banners: Banner[];
+  bannerAspect: BannerAspect;
+  /** Whether this round's announcement shows on the Home page list. */
+  published: boolean;
 }
 
 export type FieldType =
@@ -64,27 +79,6 @@ export interface FormField {
   maxSelect?: number;
   qrUrl?: string;
   qrCaption?: string;
-}
-
-export type BannerAspect = '16/9' | '1/1' | '4/3' | '9/16';
-
-export interface Banner {
-  id: string;
-  url: string;
-}
-
-export interface Announcement {
-  textTh: string;
-  textEn: string;
-  eventDate: string;
-  eventStartTime: string;
-  eventEndTime: string;
-  eventVenue: string;
-  banners: Banner[];
-  bannerAspect: BannerAspect;
-  startDate: string;
-  endDate: string;
-  published: boolean;
 }
 
 export interface AdminUser {

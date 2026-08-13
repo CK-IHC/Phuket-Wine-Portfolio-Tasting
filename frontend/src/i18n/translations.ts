@@ -94,6 +94,8 @@ export const TR = {
   chooseRoundLabel: { th: 'เลือกรอบที่ต้องการเข้าร่วม', en: 'Choose which round to join' },
   noRoundOpenMessage: { th: 'ขณะนี้ยังไม่เปิดรับลงทะเบียน กรุณาติดตามประกาศรอบถัดไป', en: 'Registration is currently closed — please check back for the next open round' },
   byRoundTitle: { th: 'จำนวนลงทะเบียนตามรอบ', en: 'Registrations by Round' },
+  editRoundTitle: { th: 'แก้ไขรอบงาน', en: 'Edit Round' },
+  publishedColLabel: { th: 'เผยแพร่หน้าแรก', en: 'On Home Page' },
   submittedLabel: { th: 'ส่งเมื่อ', en: 'Submitted' },
   rejectReasonPlaceholder: { th: 'ระบุเหตุผลที่ปฏิเสธ', en: 'Enter rejection reason' },
   cancelBtn: { th: 'ยกเลิก', en: 'Cancel' },

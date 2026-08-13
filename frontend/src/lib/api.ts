@@ -1,29 +1,10 @@
-import type { Announcement, BannerAspect, DashboardStats, EventRound, FormField, Registration, AdminUser, Session } from './types';
+import type { BannerAspect, DashboardStats, EventRound, FormField, Registration, AdminUser, Session } from './types';
 import { mockStore } from './mockStore';
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 const USE_MOCK = !API_URL;
 
 const VALID_ASPECTS: BannerAspect[] = ['16/9', '1/1', '4/3', '9/16'];
-
-/** Guards against malformed/legacy backend or cached data (e.g. a missing
- * or unrecognized bannerAspect) crashing the UI — always returns a
- * well-formed Announcement. */
-function normalizeAnnouncement(a: Partial<Announcement> | null | undefined): Announcement {
-  return {
-    textTh: a?.textTh || '',
-    textEn: a?.textEn || '',
-    eventDate: a?.eventDate || '',
-    eventStartTime: a?.eventStartTime || '',
-    eventEndTime: a?.eventEndTime || '',
-    eventVenue: a?.eventVenue || '',
-    banners: Array.isArray(a?.banners) ? a.banners : [],
-    bannerAspect: VALID_ASPECTS.includes(a?.bannerAspect as BannerAspect) ? (a!.bannerAspect as BannerAspect) : '16/9',
-    startDate: a?.startDate || '',
-    endDate: a?.endDate || '',
-    published: a?.published !== false,
-  };
-}
 
 async function apiGet<T>(action: string, params: Record<string, string> = {}): Promise<T> {
   const url = new URL(API_URL!);
@@ -78,11 +59,11 @@ function rawRegToRegistration(raw: any): Registration {
     submittedAt: raw.Timestamp ? String(raw.Timestamp) : '',
     roundId: raw.RoundId || '',
     roundName: raw.RoundName || '',
-    answers: parseAnswersJson_(raw.AnswersJson),
+    answers: parseJsonSafe_(raw.AnswersJson),
   };
 }
 
-function parseAnswersJson_(raw: unknown): Record<string, string | string[]> {
+function parseJsonSafe_(raw: unknown): Record<string, any> {
   if (!raw || typeof raw !== 'string') return {};
   try {
     const parsed = JSON.parse(raw);
@@ -92,6 +73,7 @@ function parseAnswersJson_(raw: unknown): Record<string, string | string[]> {
   }
 }
 
+/** A round is both the registerable session and its Home-page announcement. */
 function rawRoundToEventRound(raw: any): EventRound {
   return {
     id: raw.Id || String(raw._row ?? ''),
@@ -102,7 +84,22 @@ function rawRoundToEventRound(raw: any): EventRound {
     venue: raw.Venue || '',
     capacity: Number(raw.Capacity) || 0,
     status: (raw.Status || 'closed') as EventRound['status'],
+    textTh: raw.TextTh || '',
+    textEn: raw.TextEn || '',
+    banners: String(raw.ImageUrls || '').split(',').filter(Boolean).map((url: string, i: number) => ({ id: 'banner' + i, url })),
+    bannerAspect: VALID_ASPECTS.includes(raw.BannerAspect) ? raw.BannerAspect : '16/9',
+    published: raw.Published !== false && raw.Published !== 'FALSE',
   };
+}
+
+/** Frontend keeps banners as Banner[] for rendering; the backend sheet
+ * stores them as a comma-joined ImageUrls string like the old Announcement
+ * did — this flattens a round payload before it goes out over the wire. */
+function roundToWirePayload(round: Partial<EventRound>): Record<string, unknown> {
+  const { banners, ...rest } = round;
+  const payload: Record<string, unknown> = { ...rest };
+  if (banners !== undefined) payload.imageUrls = banners.map((b) => b.url);
+  return payload;
 }
 
 function rawUserToAdminUser(raw: any): AdminUser {
@@ -126,24 +123,6 @@ export const api = {
   async getFormFields(): Promise<FormField[]> {
     if (USE_MOCK) return mockStore.getFormFields();
     return apiGet<FormField[]>('getFormFields');
-  },
-
-  async getAnnouncement(): Promise<Announcement> {
-    if (USE_MOCK) return normalizeAnnouncement(mockStore.getAnnouncement());
-    const raw = await apiGet<any>('getAnnouncement');
-    return normalizeAnnouncement({
-      textTh: raw.textTh || raw.text,
-      textEn: raw.textEn,
-      eventDate: raw.eventDate,
-      eventStartTime: raw.eventStartTime,
-      eventEndTime: raw.eventEndTime,
-      eventVenue: raw.eventVenue,
-      banners: (raw.imageUrls || []).map((url: string, i: number) => ({ id: 'banner' + i, url })),
-      bannerAspect: raw.bannerAspect,
-      startDate: raw.startDate,
-      endDate: raw.endDate,
-      published: raw.published,
-    });
   },
 
   async getUsers(): Promise<AdminUser[]> {
@@ -184,13 +163,13 @@ export const api = {
 
   async addRound(round: Omit<EventRound, 'id'>): Promise<string> {
     if (USE_MOCK) return mockStore.addRound(round);
-    const res = await apiPost<{ ok: boolean; id: string }>('addRound', round);
+    const res = await apiPost<{ ok: boolean; id: string }>('addRound', roundToWirePayload(round));
     return res.id;
   },
 
   async updateRound(id: string, patch: Partial<EventRound>): Promise<void> {
     if (USE_MOCK) return mockStore.updateRound(id, patch);
-    await apiPost('updateRound', { id, ...patch });
+    await apiPost('updateRound', { id, ...roundToWirePayload(patch) });
   },
 
   async deleteRound(id: string): Promise<void> {
@@ -246,16 +225,6 @@ export const api = {
   async saveFormFields(fields: FormField[]): Promise<void> {
     if (USE_MOCK) return mockStore.saveFormFields(fields);
     await apiPost('saveFormFields', { fields });
-  },
-
-  async saveAnnouncement(a: Announcement): Promise<void> {
-    if (USE_MOCK) return mockStore.saveAnnouncement(a);
-    await apiPost('saveAnnouncement', {
-      textTh: a.textTh, textEn: a.textEn,
-      eventDate: a.eventDate, eventStartTime: a.eventStartTime, eventEndTime: a.eventEndTime, eventVenue: a.eventVenue,
-      imageUrls: a.banners.map((b) => b.url), bannerAspect: a.bannerAspect,
-      startDate: a.startDate, endDate: a.endDate, published: a.published,
-    });
   },
 
   async uploadImage(file: File, folder?: string): Promise<string> {

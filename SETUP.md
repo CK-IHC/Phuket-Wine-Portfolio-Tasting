@@ -12,7 +12,7 @@
 - Sheet ID: `1vPqZka3cCGXR_hYUlAn4WfbowvNG6Pvv1_VTdRnM1so`
 - Drive Folder ID: `1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X`
 
-โค้ดจะสร้าง sheet tab ที่จำเป็นให้อัตโนมัติพร้อมหัวตารางในการรันครั้งแรก (`Registrations`, `Users`, `Announcements`, `FormFields`) — ไม่ต้องสร้างเอง
+โค้ดจะสร้าง sheet tab ที่จำเป็นให้อัตโนมัติพร้อมหัวตารางในการรันครั้งแรก (`Registrations`, `Users`, `Rounds`, `FormFields`) — ไม่ต้องสร้างเอง
 
 **สำคัญ:** ต้องเพิ่มผู้ใช้ admin คนแรกเองในแท็บ `Users` (คอลัมน์ `Name, Phone, Role, Active, Joined`) ก่อนจะ login เข้าหน้า Admin ได้ครั้งแรก — ตั้ง `Active = TRUE`, `Role = Admin` การ login ใช้ **เบอร์โทรอย่างเดียว ไม่มีรหัสผ่าน**
 
@@ -83,6 +83,6 @@ frontend/
     context/             — Auth / Language / Toast / Print providers
     lib/                 — types, api client, mock store, chart/format helpers
     pages/user/          — Home, Register, Success
-    pages/admin/         — Login, Dashboard, List, Verify, Responses, Users, Announcements, Form Builder
+    pages/admin/         — Login, Dashboard, Rounds, List, Verify, Responses, Users, Form Builder
   public/_redirects      — Cloudflare Pages SPA routing
 ```

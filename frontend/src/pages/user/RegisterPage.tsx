@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useToast } from '../../context/ToastContext';
 import { LangToggle } from '../../components/ui/LangToggle';
@@ -14,6 +14,8 @@ export function RegisterPage() {
   const { t, lang } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedRoundId = searchParams.get('round') || '';
 
   const [fields, setFields] = useState<FormField[]>([]);
   const [rounds, setRounds] = useState<EventRound[]>([]);
@@ -32,7 +34,11 @@ export function RegisterPage() {
       .then((data) => {
         setRounds(data);
         const open = data.filter((r) => r.status === 'open');
-        if (open.length === 1) setSelectedRoundId(open[0].id);
+        if (preselectedRoundId && open.some((r) => r.id === preselectedRoundId)) {
+          setSelectedRoundId(preselectedRoundId);
+        } else if (open.length === 1) {
+          setSelectedRoundId(open[0].id);
+        }
         setLoadingRounds(false);
       })
       .catch(() => setLoadingRounds(false));

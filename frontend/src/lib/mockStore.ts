@@ -1,12 +1,11 @@
-import type { Announcement, EventRound, FormField, Registration, AdminUser } from './types';
-import { seedAnnouncement, seedFormFields, seedRegistrations, seedRounds, seedUsers } from './mockData';
+import type { EventRound, FormField, Registration, AdminUser } from './types';
+import { seedFormFields, seedRegistrations, seedRounds, seedUsers } from './mockData';
 
 const KEY = 'pwpt.mockStore.v1';
 
 interface StoreShape {
   registrations: Registration[];
   formFields: FormField[];
-  announcement: Announcement;
   users: AdminUser[];
   rounds: EventRound[];
   nextRefSeq: number;
@@ -17,7 +16,6 @@ function seed(): StoreShape {
   return {
     registrations,
     formFields: seedFormFields(),
-    announcement: seedAnnouncement(),
     users: seedUsers(),
     rounds: seedRounds(),
     nextRefSeq: registrations.length + 1,
@@ -33,7 +31,15 @@ function load(): StoreShape {
     if (!parsed.registrations || !parsed.formFields) return seed();
     // Backfill fields added after this blob was first persisted, so
     // returning users don't lose their existing data to a full reseed.
-    if (!parsed.rounds) parsed.rounds = seedRounds();
+    if (!parsed.rounds || !parsed.rounds.length) parsed.rounds = seedRounds();
+    parsed.rounds = parsed.rounds.map((r) => ({
+      ...r,
+      textTh: r.textTh || '',
+      textEn: r.textEn || '',
+      banners: r.banners || [],
+      bannerAspect: r.bannerAspect || '16/9',
+      published: r.published !== undefined ? r.published : true,
+    }));
     parsed.registrations = parsed.registrations.map((r) => ({
       ...r,
       roundId: r.roundId || '',
@@ -62,9 +68,6 @@ export const mockStore = {
   },
   getFormFields(): FormField[] {
     return store.formFields;
-  },
-  getAnnouncement(): Announcement {
-    return store.announcement;
   },
   getUsers(): AdminUser[] {
     return store.users;
@@ -103,10 +106,6 @@ export const mockStore = {
   },
   saveFormFields(fields: FormField[]) {
     store.formFields = fields;
-    persist();
-  },
-  saveAnnouncement(a: Announcement) {
-    store.announcement = a;
     persist();
   },
   addUser(u: Omit<AdminUser, 'id' | 'joined'>) {

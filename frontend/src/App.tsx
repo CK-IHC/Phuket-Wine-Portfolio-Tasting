@@ -14,7 +14,6 @@ import { RegistrationListPage } from './pages/admin/RegistrationListPage';
 import { SlipVerificationPage } from './pages/admin/SlipVerificationPage';
 import { FormResponsesPage } from './pages/admin/FormResponsesPage';
 import { UsersPage } from './pages/admin/UsersPage';
-import { AnnouncementsPage } from './pages/admin/AnnouncementsPage';
 import { FormBuilderPage } from './pages/admin/FormBuilderPage';
 import { RequireAuth } from './pages/admin/RequireAuth';
 
@@ -45,7 +44,6 @@ export default function App() {
                     <Route path="verify" element={<SlipVerificationPage />} />
                     <Route path="responses" element={<FormResponsesPage />} />
                     <Route path="users" element={<UsersPage />} />
-                    <Route path="announcements" element={<AnnouncementsPage />} />
                     <Route path="form-builder" element={<FormBuilderPage />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />

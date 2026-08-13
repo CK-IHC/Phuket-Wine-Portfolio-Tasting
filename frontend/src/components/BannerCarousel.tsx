@@ -25,7 +25,7 @@ export function BannerCarousel({ banners, aspect }: { banners: Banner[]; aspect:
 
   return (
     <>
-      <Blueprint style={{ position: 'relative', overflow: 'hidden', maxWidth: 420, margin: '0 auto' }}>
+      <Blueprint style={{ position: 'relative', overflow: 'hidden', maxWidth: 420, margin: '0 auto', width: '100%' }}>
         <div className="duotone" style={{ width: '100%', aspectRatio: aspect.replace('/', ' / '), position: 'relative' }}>
           {banners.map((b, i) => (
             <div

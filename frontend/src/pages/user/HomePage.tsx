@@ -7,17 +7,25 @@ import { Button } from '../../components/ui/Button';
 import { BannerCarousel } from '../../components/BannerCarousel';
 import { api } from '../../lib/api';
 import { formatDateStringOnly } from '../../lib/format';
-import type { Announcement } from '../../lib/types';
+import type { EventRound } from '../../lib/types';
 
 export function HomePage() {
   const { t, lang } = useLanguage();
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [rounds, setRounds] = useState<EventRound[] | null>(null);
 
   useEffect(() => {
-    api.getAnnouncement().then(setAnnouncement).catch(() => {});
+    api.getRounds().then(setRounds).catch(() => setRounds([]));
   }, []);
+
+  // Published rounds, open-for-registration first, otherwise by date descending.
+  const visibleRounds = (rounds || [])
+    .filter((r) => r.published)
+    .sort((a, b) => {
+      if ((a.status === 'open') !== (b.status === 'open')) return a.status === 'open' ? -1 : 1;
+      return b.date.localeCompare(a.date);
+    });
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)' }}>
@@ -35,36 +43,46 @@ export function HomePage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 16px 60px' }}>
-        {announcement && (
-          <BannerCarousel banners={announcement.banners} aspect={announcement.bannerAspect} />
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '20px 16px 60px', display: 'flex', flexDirection: 'column', gap: 32 }}>
+        {rounds === null && <p className="text-muted" style={{ textAlign: 'center' }}>{t('loading')}</p>}
+        {rounds !== null && visibleRounds.length === 0 && (
+          <p className="text-muted" style={{ textAlign: 'center' }}>{t('noRoundOpenMessage')}</p>
         )}
 
-        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
-          <span className="tag tag-accent" style={{ width: 'fit-content' }}>{t('tagAnnouncement')}</span>
-          <p style={{ fontSize: 15, lineHeight: 1.6 }}>
-            {announcement ? (lang === 'th' ? announcement.textTh : announcement.textEn) : ''}
-          </p>
-          {announcement && (
-            <p style={{ fontSize: 13, marginTop: 4, fontWeight: 600 }}>
-              {formatDateStringOnly(announcement.eventDate, lang)}
-              {announcement.eventStartTime && ` · ${announcement.eventStartTime}`}
-              {announcement.eventEndTime && `–${announcement.eventEndTime}`}
-              {announcement.eventVenue && ` · ${announcement.eventVenue}`}
-            </p>
-          )}
-        </div>
+        {visibleRounds.map((round) => (
+          <div key={round.id} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <BannerCarousel banners={round.banners} aspect={round.bannerAspect} />
 
-        <div style={{ maxWidth: 420, margin: '0 auto' }}>
-          <Button
-            variant="primary"
-            block
-            style={{ marginTop: 28, height: 52, fontSize: 16 }}
-            onClick={() => navigate('/register')}
-          >
-            {t('registerBtn')}
-          </Button>
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 420, margin: '0 auto', width: '100%' }}>
+              <span className="tag tag-accent" style={{ width: 'fit-content' }}>{t('tagAnnouncement')}</span>
+              <h3 style={{ margin: 0 }}>{round.name}</h3>
+              <p style={{ fontSize: 15, lineHeight: 1.6 }}>{lang === 'th' ? round.textTh : round.textEn}</p>
+              <p style={{ fontSize: 13, marginTop: 4, fontWeight: 600 }}>
+                {formatDateStringOnly(round.date, lang)}
+                {round.startTime && ` · ${round.startTime}`}
+                {round.endTime && `–${round.endTime}`}
+                {round.venue && ` · ${round.venue}`}
+              </p>
+            </div>
+
+            <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
+              {round.status === 'open' ? (
+                <Button
+                  variant="primary"
+                  block
+                  style={{ height: 52, fontSize: 16 }}
+                  onClick={() => navigate(`/register?round=${round.id}`)}
+                >
+                  {t('registerBtn')}
+                </Button>
+              ) : (
+                <div className="tag tag-outline" style={{ width: 'fit-content', margin: '0 auto' }}>
+                  {t('roundStatusClosed')}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

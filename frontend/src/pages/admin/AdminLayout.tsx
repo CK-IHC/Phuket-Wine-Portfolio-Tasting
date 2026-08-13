@@ -12,7 +12,6 @@ const TABS: { path: string; labelKey: TrKey }[] = [
   { path: 'verify', labelKey: 'tabVerify' },
   { path: 'responses', labelKey: 'tabResponses' },
   { path: 'users', labelKey: 'tabUsers' },
-  { path: 'announcements', labelKey: 'tabAnnounce' },
   { path: 'form-builder', labelKey: 'tabForm' },
 ];
 
