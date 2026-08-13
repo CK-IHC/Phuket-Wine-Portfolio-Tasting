@@ -46,13 +46,32 @@ function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+/** Sheets auto-detects date/time-shaped text (the "2026-09-20" Date column,
+ * "18:00" StartTime/EndTime) and silently stores it as a real Date value —
+ * even though it was written as a plain string via appendRow/setValue. Left
+ * alone, that Date survives into the JSON response via its default
+ * toJSON/toISOString(), which is always UTC — shifting local dates/times
+ * across midnight and leaving the frontend's "YYYY-MM-DD"/"HH:mm" string
+ * parsing (date.split('-'), etc.) looking at mangled text. Convert any Date
+ * cell back to a plain local-timezone string before it ever reaches JSON. */
+function formatSheetDate_(v, header, tz) {
+  if (/time$/i.test(header)) return Utilities.formatDate(v, tz, 'HH:mm');
+  if (/date$/i.test(header)) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+  return Utilities.formatDate(v, tz, "yyyy-MM-dd'T'HH:mm:ss");
+}
+
 function sheetToObjects(sh) {
+  const tz = Session.getScriptTimeZone();
   const rng = sh.getDataRange().getValues();
   if (rng.length < 2) return [];
   const headers = rng[0];
   return rng.slice(1).filter(r => r.join('') !== '').map((row, i) => {
     const obj = { _row: i + 2 };
-    headers.forEach((h, idx) => obj[h] = row[idx]);
+    headers.forEach((h, idx) => {
+      let v = row[idx];
+      if (v instanceof Date) v = formatSheetDate_(v, h, tz);
+      obj[h] = v;
+    });
     return obj;
   });
 }

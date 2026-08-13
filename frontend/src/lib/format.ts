@@ -24,16 +24,44 @@ export function formatDateOnly(raw: string | undefined, lang: Lang): string {
   return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** A correctly-behaving backend only ever sends a plain "YYYY-MM-DD" date
+ * string, but Google Sheets is known to silently convert a date-shaped cell
+ * into a real Date value, which then round-trips through JSON as a full
+ * "YYYY-MM-DDTHH:mm:ss.sssZ" string. Strip everything from 'T' onward so a
+ * value in either shape parses the same way. */
+function dateOnlyPart(dateStr: string): string {
+  const t = dateStr.indexOf('T');
+  return t === -1 ? dateStr : dateStr.slice(0, t);
+}
+
 /** Formats a date-only "YYYY-MM-DD" string (e.g. from <input type="date">)
  * without going through Date parsing, which shifts by a day near UTC
  * midnight in negative-offset timezones. */
 export function formatDateStringOnly(dateStr: string | undefined, lang: Lang): string {
   if (!dateStr) return '-';
-  const parts = dateStr.split('-').map(Number);
+  const parts = dateOnlyPart(dateStr).split('-').map(Number);
   const [y, m, d] = parts;
   if (!y || !m || !d) return dateStr;
   const months = lang === 'th' ? MONTH_TH : MONTH_EN;
   return `${d} ${months[m - 1]} ${y}`;
+}
+
+/** dd-mmm-yyyy, HH:mm — used for the round announcement date/time on the
+ * Home page. Takes a "YYYY-MM-DD" date string plus separate start/end
+ * "HH:mm" time strings (already stored that way on EventRound). */
+export function formatRoundDateTime(
+  dateStr: string | undefined,
+  startTime: string | undefined,
+  endTime: string | undefined,
+  lang: Lang
+): string {
+  if (!dateStr) return '-';
+  const [y, m, d] = dateOnlyPart(dateStr).split('-').map(Number);
+  if (!y || !m || !d) return dateStr;
+  const months = lang === 'th' ? MONTH_TH : MONTH_EN;
+  const datePart = `${String(d).padStart(2, '0')}-${months[m - 1]}-${y}`;
+  const timePart = startTime ? `, ${startTime}${endTime ? `–${endTime}` : ''}` : '';
+  return `${datePart}${timePart}`;
 }
 
 export function dataAsOfLabel(lang: Lang): string {
