@@ -78,7 +78,18 @@ function rawRegToRegistration(raw: any): Registration {
     submittedAt: raw.Timestamp ? String(raw.Timestamp) : '',
     roundId: raw.RoundId || '',
     roundName: raw.RoundName || '',
+    answers: parseAnswersJson_(raw.AnswersJson),
   };
+}
+
+function parseAnswersJson_(raw: unknown): Record<string, string | string[]> {
+  if (!raw || typeof raw !== 'string') return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 function rawRoundToEventRound(raw: any): EventRound {
@@ -189,7 +200,8 @@ export const api = {
 
   async submitRegistration(payload: {
     name: string; phone: string; email: string; area: string; arrival: string; source: string;
-    wines: string[]; prices: string[]; amount: number; roundId: string; roundName: string; slip?: File;
+    wines: string[]; prices: string[]; amount: number; roundId: string; roundName: string;
+    answers: Record<string, string | string[]>; slip?: File;
   }): Promise<string> {
     if (USE_MOCK) {
       let slipUrl = '';

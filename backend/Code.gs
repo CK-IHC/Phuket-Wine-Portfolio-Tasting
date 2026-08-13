@@ -7,7 +7,7 @@
 const SHEET_ID = '1vPqZka3cCGXR_hYUlAn4WfbowvNG6Pvv1_VTdRnM1so';
 const FOLDER_ID = '1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X';
 
-const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName'];
+const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName','AnswersJson'];
 // No password column — admin/staff sign in with phone number only (matched against Active users).
 const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
 const ANNOUNCE_HEADERS = ['TextTh','TextEn','EventDate','EventStartTime','EventEndTime','EventVenue','ImageUrls','BannerAspect','StartDate','EndDate','Published'];
@@ -118,7 +118,10 @@ function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
   // access, switch to DriveApp.Access.DOMAIN or drop sharing and proxy views
   // through a signed doGet action instead.
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return file.getUrl();
+  // file.getUrl() returns a Drive *viewer page* (drive.google.com/file/d/.../view),
+  // which an <img> tag cannot render. This lh3.googleusercontent.com form serves
+  // the raw image bytes directly, so banners/slips/QR actually display.
+  return 'https://lh3.googleusercontent.com/d/' + file.getId();
 }
 
 function submitRegistration(p) {
@@ -130,6 +133,7 @@ function submitRegistration(p) {
     new Date(), refNo, p.name || '', p.phone || '', p.email || '', p.area || '',
     p.arrival || '', p.source || '', (p.wines || []).join(', '), (p.prices || []).join(', '),
     slipUrl, p.amount || 0, 'pending', '', p.roundId || '', p.roundName || '',
+    JSON.stringify(p.answers || {}),
   ]);
   return { ok: true, refNo };
 }

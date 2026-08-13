@@ -38,6 +38,7 @@ function load(): StoreShape {
       ...r,
       roundId: r.roundId || '',
       roundName: r.roundName || '',
+      answers: r.answers || {},
     }));
     return parsed;
   } catch {

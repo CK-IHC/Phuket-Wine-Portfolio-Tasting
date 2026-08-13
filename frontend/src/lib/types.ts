@@ -18,6 +18,10 @@ export interface Registration {
   submittedAt: string;
   roundId: string;
   roundName: string;
+  /** Raw per-question answers keyed by FormField.id, captured at submission
+   * time — lets Form Responses render one column per question, including
+   * any custom field added after the fixed columns above were designed. */
+  answers: Record<string, string | string[]>;
 }
 
 export type RoundStatus = 'open' | 'closed';

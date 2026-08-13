@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { api } from '../../lib/api';
-import type { Registration } from '../../lib/types';
+import type { EventRound, Registration } from '../../lib/types';
 import { availableYears, dailyTrend, monthlyTrend, yearlyTrend } from '../../lib/charts';
 import { dataAsOfLabel } from '../../lib/format';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
@@ -23,6 +23,8 @@ function daysAgoISO(n: number) {
 export function DashboardPage() {
   const { t, lang } = useLanguage();
   const [regs, setRegs] = useState<Registration[]>([]);
+  const [rounds, setRounds] = useState<EventRound[]>([]);
+  const [roundFilter, setRoundFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [monthlyYear, setMonthlyYear] = useState('');
   const [granularity, setGranularity] = useState<Granularity>('day');
@@ -38,21 +40,35 @@ export function DashboardPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    api.getRounds().then(setRounds).catch(() => {});
   }, []);
 
-  const total = regs.length;
-  const pending = regs.filter((r) => r.status === 'pending').length;
-  const approved = regs.filter((r) => r.status === 'approved').length;
-  const rejected = regs.filter((r) => r.status === 'rejected').length;
-  const revenue = regs.filter((r) => r.status === 'approved').reduce((a, r) => a + r.amount, 0);
+  const filteredRegs = useMemo(
+    () => (roundFilter === 'all' ? regs : regs.filter((r) => r.roundId === roundFilter)),
+    [regs, roundFilter]
+  );
 
-  const years = useMemo(() => availableYears(regs), [regs]);
-  const monthlyPoints = useMemo(() => monthlyTrend(regs, monthlyYear, lang), [regs, monthlyYear, lang]);
+  const total = filteredRegs.length;
+  const pending = filteredRegs.filter((r) => r.status === 'pending').length;
+  const approved = filteredRegs.filter((r) => r.status === 'approved').length;
+  const rejected = filteredRegs.filter((r) => r.status === 'rejected').length;
+  const revenue = filteredRegs.filter((r) => r.status === 'approved').reduce((a, r) => a + r.amount, 0);
+
+  const years = useMemo(() => availableYears(filteredRegs), [filteredRegs]);
+  useEffect(() => {
+    if (years.length && !years.includes(monthlyYear)) setMonthlyYear(years[years.length - 1]);
+  }, [years]);
+  const monthlyPoints = useMemo(() => monthlyTrend(filteredRegs, monthlyYear, lang), [filteredRegs, monthlyYear, lang]);
   const trendBars = useMemo(() => {
-    if (granularity === 'day') return dailyTrend(regs, dateFrom, dateTo);
-    if (granularity === 'year') return yearlyTrend(regs);
-    return monthlyTrend(regs, monthlyYear, lang);
-  }, [granularity, regs, dateFrom, dateTo, monthlyYear, lang]);
+    if (granularity === 'day') return dailyTrend(filteredRegs, dateFrom, dateTo);
+    if (granularity === 'year') return yearlyTrend(filteredRegs);
+    return monthlyTrend(filteredRegs, monthlyYear, lang);
+  }, [granularity, filteredRegs, dateFrom, dateTo, monthlyYear, lang]);
+
+  const byRoundBars = useMemo(
+    () => rounds.map((r) => ({ label: r.name, value: regs.filter((x) => x.roundId === r.id).length })),
+    [rounds, regs]
+  );
 
   const statCards = [
     { label: t('statTotal'), value: String(total) },
@@ -66,7 +82,15 @@ export function DashboardPage() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 16 }}>{t('tabDashboard')}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+        <h2 style={{ margin: 0 }}>{t('tabDashboard')}</h2>
+        {rounds.length > 0 && (
+          <select className="input" style={{ width: 'auto' }} value={roundFilter} onChange={(e) => setRoundFilter(e.target.value)}>
+            <option value="all">{t('filterAllRounds')}</option>
+            {rounds.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+        )}
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12 }}>
         {statCards.map((sc) => (
@@ -124,6 +148,14 @@ export function DashboardPage() {
           <div className="text-muted" style={{ fontSize: 11, alignSelf: 'flex-start' }}>{dataAsOfLabel(lang)}</div>
           <DonutChart approved={approved} pending={pending} rejected={rejected} total={total} />
         </div>
+
+        {rounds.length > 0 && (
+          <div className="card" style={{ gap: 12 }}>
+            <div className="card-title">{t('byRoundTitle')}</div>
+            <div className="text-muted" style={{ fontSize: 11 }}>{dataAsOfLabel(lang)}</div>
+            <BarChart bars={byRoundBars} />
+          </div>
+        )}
       </div>
     </div>
   );

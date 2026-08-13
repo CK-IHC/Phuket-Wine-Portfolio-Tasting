@@ -102,14 +102,12 @@ export function RegistrationListPage() {
         { key: 'name', label: t('colName') },
         { key: 'phone', label: t('colPhone') },
         { key: 'round', label: t('colRound') },
-        { key: 'area', label: t('colArea') },
-        { key: 'wines', label: t('colWines') },
-        { key: 'amount', label: t('colAmount') },
+        { key: 'amount', label: t('colAmountTransferred') },
         { key: 'status', label: t('colStatus') },
       ],
       rows: rows.map((r) => ({
-        refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '-', area: r.area,
-        wines: r.wines.join(', ') || '-', amount: `฿${r.amount.toLocaleString()}`,
+        refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '-',
+        amount: `฿${r.amount.toLocaleString()}`,
         status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
       })),
     });
@@ -197,6 +195,7 @@ export function RegistrationListPage() {
             <tr>
               <th><input type="checkbox" checked={isAllFilteredSelected} onChange={toggleSelectAllFiltered} /></th>
               <th>{t('colRef')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th><th>{t('colRound')}</th>
+              <th>{t('colAmountTransferred')}</th>
               <th>{t('colStatus')}</th><th>{t('colSlip')}</th><th /><th />
             </tr>
           </thead>
@@ -208,6 +207,7 @@ export function RegistrationListPage() {
                 <td>{r.name}</td>
                 <td>{r.phone}</td>
                 <td>{r.roundName || '-'}</td>
+                <td>฿{r.amount.toLocaleString()}</td>
                 <td><StatusTag status={r.status} /></td>
                 <td><button className="btn btn-ghost" onClick={() => setSlipReg(r)}>{t('viewSlipBtn')}</button></td>
                 <td><button className="btn btn-ghost" onClick={() => setDetailReg(r)}>{t('viewDetailBtn')}</button></td>

@@ -76,15 +76,16 @@ export function seedRegistrations(): Registration[] {
       const status = seed % 9 === 0 ? 'rejected' : seed % 3 === 0 ? 'pending' : 'approved';
       const wines = pickMany(WINE_OPTIONS, seed, 2 + (seed % 2));
       const prices = [pick(PRICE_OPTIONS, seed)];
+      const name = `${pick(FIRST_NAMES, seed)} ${pick(LAST_NAMES, seed + 5)}`;
+      const phone = `08${String(1000000 + seed * 137).slice(0, 8)}`;
+      const email = `guest${seed}@mail.com`;
+      const area = pick(AREA_OPTIONS, seed + 1);
+      const arrival = `${18 + (seed % 2)}:${seed % 2 === 0 ? '00' : '30'}`;
+      const source = pick(SOURCE_OPTIONS, seed + 2);
       regs.push({
         id: String(seq),
         refNo: `${year + 543}-${String(seq).padStart(3, '0')}`,
-        name: `${pick(FIRST_NAMES, seed)} ${pick(LAST_NAMES, seed + 5)}`,
-        phone: `08${String(1000000 + seed * 137).slice(0, 8)}`,
-        email: `guest${seed}@mail.com`,
-        area: pick(AREA_OPTIONS, seed + 1),
-        arrival: `${18 + (seed % 2)}:${seed % 2 === 0 ? '00' : '30'}`,
-        source: pick(SOURCE_OPTIONS, seed + 2),
+        name, phone, email, area, arrival, source,
         wines,
         prices,
         slipUrl: '',
@@ -93,6 +94,9 @@ export function seedRegistrations(): Registration[] {
         submittedAt,
         roundId: ROUND_ID_BY_YEAR[year],
         roundName: ROUND_NAME_BY_YEAR[year],
+        answers: {
+          f1: email, f2: name, f3: phone, f4: '', f5: area, f6: arrival, f7: source, f8: wines, f9: prices,
+        },
       });
       seq += 1;
     }

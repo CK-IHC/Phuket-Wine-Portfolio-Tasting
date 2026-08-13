@@ -112,6 +112,7 @@ export function RegisterPage() {
         amount: 1500,
         roundId: selectedRound?.id || '',
         roundName: selectedRound?.name || '',
+        answers: Object.fromEntries(Object.entries(answers).filter(([, v]) => v !== undefined)) as Record<string, string | string[]>,
         slip: slipFile,
       });
       setRefNo(newRefNo);
