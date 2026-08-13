@@ -52,6 +52,7 @@ function doGet(e) {
     if (action === 'getUsers') return json({ ok: true, data: readUsers() });
     if (action === 'getDashboardStats') return json({ ok: true, data: computeStats() });
     if (action === 'getRounds') return json({ ok: true, data: readRounds() });
+    if (action === 'image') return serveImage(e.parameter.id);
     return json({ ok: false, error: 'unknown action: ' + action });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -114,14 +115,27 @@ function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
   if (subfolderName) folder = getOrCreateSubfolder_(folder, subfolderName);
   const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
   const file = folder.createFile(blob);
-  // ANYONE_WITH_LINK keeps slip review simple for the admin team. For stricter
-  // access, switch to DriveApp.Access.DOMAIN or drop sharing and proxy views
-  // through a signed doGet action instead.
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  // file.getUrl() returns a Drive *viewer page* (drive.google.com/file/d/.../view),
-  // which an <img> tag cannot render. This lh3.googleusercontent.com form serves
-  // the raw image bytes directly, so banners/slips/QR actually display.
-  return 'https://lh3.googleusercontent.com/d/' + file.getId();
+  try {
+    // Best-effort: lets an admin open the file link directly from Drive.
+    // Not required for display — a Workspace sharing policy that blocks
+    // "anyone with the link" would throw here, so this must never break
+    // the upload itself.
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (err) {
+    // Ignore — see comment above.
+  }
+  // Do NOT use file.getUrl() (a Drive viewer page, not an image) or Drive
+  // "hotlink" URL patterns (drive.google.com/uc?export=view, lh3.googleusercontent
+  // .com/d/...) — both are undocumented, get rate-limited/blocked inconsistently,
+  // and depend on link-sharing being allowed at all. Instead, serve the image
+  // through this same Web App's own doGet, which reads the file with the
+  // script owner's access regardless of external sharing settings.
+  return ScriptApp.getService().getUrl() + '?action=image&id=' + file.getId();
+}
+
+function serveImage(fileId) {
+  const file = DriveApp.getFileById(fileId);
+  return file.getBlob();
 }
 
 function submitRegistration(p) {
