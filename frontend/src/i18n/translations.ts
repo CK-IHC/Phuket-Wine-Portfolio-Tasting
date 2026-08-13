@@ -89,6 +89,8 @@ export const TR = {
   roundCapacityLabel: { th: 'จำนวนที่รับ (0 = ไม่จำกัด)', en: 'Capacity (0 = unlimited)' },
   toastRoundAdded: { th: 'เพิ่มรอบงานแล้ว', en: 'Round added' },
   toastRoundDeleted: { th: 'ลบรอบงานแล้ว', en: 'Round deleted' },
+  toastUploadFailed: { th: 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่', en: 'Image upload failed — please try again' },
+  toastSaveFailed: { th: 'บันทึกไม่สำเร็จ กรุณาลองใหม่', en: 'Save failed — please try again' },
   colRound: { th: 'รอบงาน', en: 'Round' },
   filterAllRounds: { th: 'ทุกรอบ', en: 'All Rounds' },
   chooseRoundLabel: { th: 'เลือกรอบที่ต้องการเข้าร่วม', en: 'Choose which round to join' },

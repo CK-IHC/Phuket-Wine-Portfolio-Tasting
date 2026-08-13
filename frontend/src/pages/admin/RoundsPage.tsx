@@ -39,6 +39,7 @@ export function RoundsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -76,8 +77,15 @@ export function RoundsPage() {
   };
 
   const addImage = async (file: File) => {
-    const url = await api.uploadImage(file, 'Banners');
-    setDraft((d) => ({ ...d, banners: [...d.banners, { id: 'banner' + Date.now(), url }] }));
+    setUploading(true);
+    try {
+      const url = await api.uploadImage(file, 'Banners');
+      setDraft((d) => ({ ...d, banners: [...d.banners, { id: 'banner' + Date.now(), url }] }));
+    } catch {
+      toast(t('toastUploadFailed'));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeBanner = (id: string) => {
@@ -100,6 +108,8 @@ export function RoundsPage() {
       }
       setDialogOpen(false);
       toast(t(editingId ? 'toastSaved' : 'toastRoundAdded'));
+    } catch {
+      toast(t('toastSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -133,7 +143,7 @@ export function RoundsPage() {
                 <td>{r.published ? t('publishOpt') : t('hideOpt')}</td>
                 <td>
                   <span
-                    className={`tag ${r.status === 'open' ? 'tag-status-approved' : 'tag-status-rejected'}`}
+                    className={`tag ${r.status === 'open' ? 'tag-round-open' : 'tag-round-closed'}`}
                     style={{ cursor: 'pointer' }}
                     onClick={() => toggleStatus(r)}
                   >
@@ -223,8 +233,9 @@ export function RoundsPage() {
                 className="btn btn-secondary"
                 style={{ width: 110, aspectRatio: draft.bannerAspect.replace('/', ' / ') }}
                 onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
               >
-                {t('addImageBtn')}
+                {uploading ? t('loading') : t('addImageBtn')}
               </button>
               <input
                 ref={fileInputRef}

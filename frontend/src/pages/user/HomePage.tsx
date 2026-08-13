@@ -4,6 +4,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { LangToggle } from '../../components/ui/LangToggle';
 import { Button } from '../../components/ui/Button';
+import { Blueprint } from '../../components/ui/Blueprint';
 import { BannerCarousel } from '../../components/BannerCarousel';
 import { api } from '../../lib/api';
 import { formatDateStringOnly } from '../../lib/format';
@@ -50,37 +51,36 @@ export function HomePage() {
         )}
 
         {visibleRounds.map((round) => (
-          <div key={round.id} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div key={round.id} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 420, margin: '0 auto', width: '100%' }}>
             <BannerCarousel banners={round.banners} aspect={round.bannerAspect} />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 420, margin: '0 auto', width: '100%' }}>
-              <span className="tag tag-accent" style={{ width: 'fit-content' }}>{t('tagAnnouncement')}</span>
+            <Blueprint style={{ padding: 18, gap: 10, display: 'flex', flexDirection: 'column' }}>
+              <span
+                className={`tag ${round.status === 'open' ? 'tag-round-open' : 'tag-round-closed'}`}
+                style={{ width: 'fit-content' }}
+              >
+                {t(round.status === 'open' ? 'roundStatusOpen' : 'roundStatusClosed')}
+              </span>
               <h3 style={{ margin: 0 }}>{round.name}</h3>
-              <p style={{ fontSize: 15, lineHeight: 1.6 }}>{lang === 'th' ? round.textTh : round.textEn}</p>
-              <p style={{ fontSize: 13, marginTop: 4, fontWeight: 600 }}>
+              <p style={{ fontSize: 15, lineHeight: 1.6, margin: 0 }}>{lang === 'th' ? round.textTh : round.textEn}</p>
+              <p style={{ fontSize: 13, marginTop: 4, marginBottom: 0, fontWeight: 600 }}>
                 {formatDateStringOnly(round.date, lang)}
                 {round.startTime && ` · ${round.startTime}`}
                 {round.endTime && `–${round.endTime}`}
                 {round.venue && ` · ${round.venue}`}
               </p>
-            </div>
 
-            <div style={{ maxWidth: 420, margin: '0 auto', width: '100%' }}>
-              {round.status === 'open' ? (
+              {round.status === 'open' && (
                 <Button
                   variant="primary"
                   block
-                  style={{ height: 52, fontSize: 16 }}
+                  style={{ height: 52, fontSize: 16, marginTop: 6 }}
                   onClick={() => navigate(`/register?round=${round.id}`)}
                 >
                   {t('registerBtn')}
                 </Button>
-              ) : (
-                <div className="tag tag-outline" style={{ width: 'fit-content', margin: '0 auto' }}>
-                  {t('roundStatusClosed')}
-                </div>
               )}
-            </div>
+            </Blueprint>
           </div>
         ))}
       </div>

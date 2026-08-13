@@ -93,17 +93,29 @@ export function FormBuilderPage() {
   };
 
   const uploadQr = async (fieldId: string, file: File) => {
-    const url = await api.uploadImage(file);
-    updateField(fieldId, { qrUrl: url });
+    try {
+      const url = await api.uploadImage(file);
+      updateField(fieldId, { qrUrl: url });
+    } catch {
+      toast(t('toastUploadFailed'));
+    }
   };
 
   const saveDraft = async () => {
-    await api.saveFormFields(fields);
-    toast(t('toastDraftSaved'));
+    try {
+      await api.saveFormFields(fields);
+      toast(t('toastDraftSaved'));
+    } catch {
+      toast(t('toastSaveFailed'));
+    }
   };
   const publish = async () => {
-    await api.saveFormFields(fields);
-    toast(t('toastPublished'));
+    try {
+      await api.saveFormFields(fields);
+      toast(t('toastPublished'));
+    } catch {
+      toast(t('toastSaveFailed'));
+    }
   };
 
   if (loading) return <p className="text-muted">{t('loading')}</p>;
