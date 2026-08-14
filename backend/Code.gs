@@ -157,6 +157,19 @@ function getOrCreateSubfolder_(parentFolder, name) {
   return parentFolder.createFolder(name);
 }
 
+/** Run this manually from the editor (select it in the function dropdown,
+ * click Run) whenever uploads start failing with "Access denied: DriveApp".
+ * That error means Drive access has expired and needs re-granting — this
+ * function exists purely to trigger that permission prompt cleanly, with no
+ * other side effects and no confusing follow-up errors about missing
+ * arguments (unlike running saveBase64ToDrive directly). Check the
+ * execution log after running it: it should print the target folder's name
+ * on success. */
+function authorizeDriveAccess() {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  Logger.log('อนุญาตสำเร็จ — เข้าถึงโฟลเดอร์ "%s" ได้แล้ว (Authorized OK — can access folder "%s")', folder.getName(), folder.getName());
+}
+
 /** subfolderName is optional — e.g. "Banners" keeps banner uploads out of
  * the flat root folder alongside payment slips. Omit it to save directly
  * into FOLDER_ID (used for slips and QR uploads). */
