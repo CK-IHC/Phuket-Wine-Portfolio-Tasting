@@ -81,8 +81,8 @@ export function RoundsPage() {
     try {
       const url = await api.uploadImage(file, 'Banners');
       setDraft((d) => ({ ...d, banners: [...d.banners, { id: 'banner' + Date.now(), url }] }));
-    } catch {
-      toast(t('toastUploadFailed'));
+    } catch (err) {
+      toast(`${t('toastUploadFailed')}${err instanceof Error && err.message ? ': ' + err.message : ''}`);
     } finally {
       setUploading(false);
     }
@@ -108,8 +108,8 @@ export function RoundsPage() {
       }
       setDialogOpen(false);
       toast(t(editingId ? 'toastSaved' : 'toastRoundAdded'));
-    } catch {
-      toast(t('toastSaveFailed'));
+    } catch (err) {
+      toast(`${t('toastSaveFailed')}${err instanceof Error && err.message ? ': ' + err.message : ''}`);
     } finally {
       setSaving(false);
     }

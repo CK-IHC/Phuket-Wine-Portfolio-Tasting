@@ -15,7 +15,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setMessage(msg);
     setVisible(true);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setVisible(false), 2400);
+    // Longer messages (e.g. surfaced error details) get more time on screen.
+    const duration = msg.length > 40 ? 6000 : 2400;
+    timerRef.current = setTimeout(() => setVisible(false), duration);
   }, []);
 
   return (

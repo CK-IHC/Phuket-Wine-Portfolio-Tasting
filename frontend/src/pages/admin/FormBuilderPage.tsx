@@ -96,8 +96,8 @@ export function FormBuilderPage() {
     try {
       const url = await api.uploadImage(file);
       updateField(fieldId, { qrUrl: url });
-    } catch {
-      toast(t('toastUploadFailed'));
+    } catch (err) {
+      toast(`${t('toastUploadFailed')}${err instanceof Error && err.message ? ': ' + err.message : ''}`);
     }
   };
 

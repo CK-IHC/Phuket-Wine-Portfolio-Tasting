@@ -335,6 +335,10 @@ textarea.input { min-height: 84px; resize: vertical; font-family: var(--font-bod
   border-radius: var(--radius-md);
   font-size: 13px;
   box-shadow: var(--shadow-lg);
+  max-width: min(90vw, 440px);
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* ───────────────────────── Round icon button ───────────────────────── */
