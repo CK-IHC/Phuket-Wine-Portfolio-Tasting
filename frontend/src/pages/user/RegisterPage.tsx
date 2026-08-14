@@ -89,17 +89,24 @@ export function RegisterPage() {
     // what actually lets mobile users save a PNG, so prefer it when the
     // device supports sharing files.
     const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean };
-    if (nav.share && nav.canShare) {
-      try {
-        const blob = await fetch(qrCardUrl).then((r) => r.blob());
-        const file = new File([blob], 'payment-qr-card.png', { type: blob.type || 'image/png' });
-        if (nav.canShare({ files: [file] })) {
-          await nav.share({ files: [file] });
-          return;
-        }
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+    try {
+      const blob = await fetch(qrCardUrl).then((r) => r.blob());
+      const file = new File([blob], 'payment-qr-card.png', { type: 'image/png' });
+      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file] });
+        return;
       }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+    }
+    // iOS Safari doesn't support sharing files on older versions and also
+    // ignores the download attribute (just navigates instead of saving) —
+    // open the image in its own tab so long-press-to-save still works.
+    const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS) {
+      window.open(qrCardUrl, '_blank');
+      toast(t('toastLongPressSave'));
+      return;
     }
     const a = document.createElement('a');
     a.href = qrCardUrl;

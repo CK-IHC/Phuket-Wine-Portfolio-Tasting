@@ -192,6 +192,7 @@ export const TR = {
   toastNoQr: { th: 'ยังไม่มีรูป QR Code ให้ดาวน์โหลด', en: 'No QR code image to download yet' },
   saveImageBtn: { th: 'บันทึกรูปภาพ', en: 'Save Image' },
   qrCardHint: { th: 'แตะค้างที่รูปเพื่อบันทึก หรือกดปุ่มด้านล่าง', en: 'Long-press the image to save, or use the button below' },
+  toastLongPressSave: { th: 'เปิดรูปในแท็บใหม่แล้ว — แตะค้างที่รูปเพื่อบันทึกลงอัลบั้ม', en: 'Opened the image in a new tab — long-press it to save to your photos' },
   editRegTitle: { th: 'แก้ไขข้อมูลลงทะเบียน', en: 'Edit Registration' },
   filterDay: { th: 'รายวัน', en: 'Daily' },
   filterMonth: { th: 'รายเดือน', en: 'Monthly' },
