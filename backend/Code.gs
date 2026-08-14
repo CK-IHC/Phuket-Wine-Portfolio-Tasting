@@ -82,6 +82,20 @@ function sheetToObjects(sh) {
 
 // ───────────────────────── doGet / doPost ─────────────────────────
 
+/** "Access denied: DriveApp" isn't a bug in this code — it means the script's
+ * permission to use Drive has expired or was never granted (very common
+ * while the linked Google Cloud OAuth consent screen is still in "Testing"
+ * publishing status, where granted access expires after ~7 days). Surface
+ * the fix directly in the error instead of just the raw exception, so
+ * whoever sees the failure toast doesn't have to come ask what it means. */
+function friendlyError_(err) {
+  const msg = String(err);
+  if (/access denied/i.test(msg) && /drive/i.test(msg)) {
+    return msg + ' — สิทธิ์เข้าถึง Google Drive หมดอายุ/ยังไม่ได้อนุญาต: เปิดโปรเจกต์นี้ที่ script.google.com, เลือกฟังก์ชันใดก็ได้จาก dropdown แล้วกด Run 1 ครั้ง, กด "Review permissions" > เลือกบัญชี > Advanced > Go to [ชื่อโปรเจกต์] (unsafe) > Allow. ถ้าเกิดซ้ำทุกสัปดาห์ ให้ไปที่ Google Cloud Console > OAuth consent screen แล้วเปลี่ยน Publishing status เป็น Internal (ถ้าเป็นบัญชี Workspace) เพื่อไม่ให้สิทธิ์หมดอายุอีก';
+  }
+  return msg;
+}
+
 function doGet(e) {
   const action = (e.parameter && e.parameter.action) || '';
   try {
@@ -92,7 +106,7 @@ function doGet(e) {
     if (action === 'getRounds') return json({ ok: true, data: readRounds() });
     return json({ ok: false, error: 'unknown action: ' + action });
   } catch (err) {
-    return json({ ok: false, error: String(err) });
+    return json({ ok: false, error: friendlyError_(err) });
   }
 }
 
@@ -120,7 +134,7 @@ function doPost(e) {
     }
     return json(result);
   } catch (err) {
-    return json({ ok: false, error: String(err) });
+    return json({ ok: false, error: friendlyError_(err) });
   }
 }
 

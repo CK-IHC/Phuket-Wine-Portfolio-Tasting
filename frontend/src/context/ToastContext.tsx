@@ -15,15 +15,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setMessage(msg);
     setVisible(true);
     if (timerRef.current) clearTimeout(timerRef.current);
-    // Longer messages (e.g. surfaced error details) get more time on screen.
-    const duration = msg.length > 40 ? 6000 : 2400;
+    // Longer messages (e.g. surfaced error details / fix instructions) get
+    // proportionally more time on screen, up to a cap, instead of vanishing
+    // before anyone can finish reading them.
+    const duration = Math.min(2400 + Math.max(0, msg.length - 40) * 80, 20000);
     timerRef.current = setTimeout(() => setVisible(false), duration);
+  }, []);
+
+  const dismiss = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setVisible(false);
   }, []);
 
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {visible && <div className="toast">{message}</div>}
+      {visible && (
+        <div className="toast" onClick={dismiss} style={{ cursor: 'pointer' }} title={message.length > 40 ? 'Tap to dismiss' : undefined}>
+          {message}
+        </div>
+      )}
     </ToastContext.Provider>
   );
 }
