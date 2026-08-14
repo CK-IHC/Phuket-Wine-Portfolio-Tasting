@@ -81,8 +81,26 @@ export function RegisterPage() {
     setQrCardUrl(null);
   };
 
-  const saveQrCard = () => {
+  const saveQrCard = async () => {
     if (!qrCardUrl) return;
+    // The <a download> trick is desktop-only — iOS/Android browsers mostly
+    // just navigate to the image instead of saving it. The Web Share API's
+    // native share sheet (which includes "Save Image"/"Save to Files") is
+    // what actually lets mobile users save a PNG, so prefer it when the
+    // device supports sharing files.
+    const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean };
+    if (nav.share && nav.canShare) {
+      try {
+        const blob = await fetch(qrCardUrl).then((r) => r.blob());
+        const file = new File([blob], 'payment-qr-card.png', { type: blob.type || 'image/png' });
+        if (nav.canShare({ files: [file] })) {
+          await nav.share({ files: [file] });
+          return;
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+      }
+    }
     const a = document.createElement('a');
     a.href = qrCardUrl;
     a.download = 'payment-qr-card.png';

@@ -86,7 +86,6 @@ function doGet(e) {
     if (action === 'getUsers') return json({ ok: true, data: readUsers() });
     if (action === 'getDashboardStats') return json({ ok: true, data: computeStats() });
     if (action === 'getRounds') return json({ ok: true, data: readRounds() });
-    if (action === 'image') return serveImage(e.parameter.id);
     return json({ ok: false, error: 'unknown action: ' + action });
   } catch (err) {
     return json({ ok: false, error: String(err) });
@@ -148,27 +147,15 @@ function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
   if (subfolderName) folder = getOrCreateSubfolder_(folder, subfolderName);
   const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
   const file = folder.createFile(blob);
-  try {
-    // Best-effort: lets an admin open the file link directly from Drive.
-    // Not required for display — a Workspace sharing policy that blocks
-    // "anyone with the link" would throw here, so this must never break
-    // the upload itself.
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  } catch (err) {
-    // Ignore — see comment above.
-  }
-  // Do NOT use file.getUrl() (a Drive viewer page, not an image) or Drive
-  // "hotlink" URL patterns (drive.google.com/uc?export=view, lh3.googleusercontent
-  // .com/d/...) — both are undocumented, get rate-limited/blocked inconsistently,
-  // and depend on link-sharing being allowed at all. Instead, serve the image
-  // through this same Web App's own doGet, which reads the file with the
-  // script owner's access regardless of external sharing settings.
-  return ScriptApp.getService().getUrl() + '?action=image&id=' + file.getId();
-}
-
-function serveImage(fileId) {
-  const file = DriveApp.getFileById(fileId);
-  return file.getBlob();
+  // Serving the file through this Web App's own doGet (returning a raw Blob)
+  // reliably fails live with "the returned value was not a supported return
+  // type" — so instead, share the file and link to Google's own CDN, which
+  // is what every <img> tag actually needs: a URL Google itself serves.
+  // Sharing must succeed or the link is useless, so let a failure here
+  // (e.g. a Workspace policy blocking "anyone with the link") surface as a
+  // real upload error instead of silently returning a dead URL.
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return 'https://lh3.googleusercontent.com/d/' + file.getId();
 }
 
 function submitRegistration(p) {

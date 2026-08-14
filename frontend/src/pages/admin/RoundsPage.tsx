@@ -24,6 +24,36 @@ const BANNER_RECOMMENDED_PX: Record<BannerAspect, string> = {
   '9/16': '1080 × 1920 px',
 };
 
+const ASPECT_RATIO_VALUES: [BannerAspect, number][] = [
+  ['16/9', 16 / 9], ['1/1', 1], ['4/3', 4 / 3], ['9/16', 9 / 16],
+];
+
+/** Reads the image's own natural dimensions and picks whichever preset
+ * aspect ratio it's closest to, so the admin doesn't have to know the
+ * shape of their photo in advance and manually match it to a preset. */
+function detectImageAspect(file: File): Promise<BannerAspect> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    const done = (aspect: BannerAspect) => {
+      URL.revokeObjectURL(url);
+      resolve(aspect);
+    };
+    img.onload = () => {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      let best: BannerAspect = '16/9';
+      let bestDiff = Infinity;
+      for (const [key, value] of ASPECT_RATIO_VALUES) {
+        const diff = Math.abs(value - ratio);
+        if (diff < bestDiff) { bestDiff = diff; best = key; }
+      }
+      done(best);
+    };
+    img.onerror = () => done('16/9');
+    img.src = url;
+  });
+}
+
 type Draft = Omit<EventRound, 'id' | 'capacity' | 'status'> & { capacity: string };
 
 const EMPTY_DRAFT: Draft = {
@@ -80,8 +110,17 @@ export function RoundsPage() {
   const addImage = async (file: File) => {
     setUploading(true);
     try {
-      const url = await api.uploadImage(file, 'Banners');
-      setDraft((d) => ({ ...d, banners: [...d.banners, { id: 'banner' + Date.now(), url }] }));
+      const [url, detectedAspect] = await Promise.all([
+        api.uploadImage(file, 'Banners'),
+        detectImageAspect(file),
+      ]);
+      setDraft((d) => ({
+        ...d,
+        banners: [...d.banners, { id: 'banner' + Date.now(), url }],
+        // Only the first image sets the shape — later ones share it so the
+        // carousel stays a consistent size.
+        bannerAspect: d.banners.length === 0 ? detectedAspect : d.bannerAspect,
+      }));
     } catch (err) {
       toast(`${t('toastUploadFailed')}${err instanceof Error && err.message ? ': ' + err.message : ''}`);
     } finally {
