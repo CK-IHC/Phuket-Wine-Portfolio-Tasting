@@ -1,4 +1,6 @@
-function loadImage(src: string): Promise<HTMLImageElement> {
+import { driveImageCandidates } from './driveImageUrls';
+
+function loadImageOnce(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     // blob:/data: URLs are same-document and don't support (and can even
@@ -9,6 +11,23 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('image load failed'));
     img.src = src;
   });
+}
+
+/** Same reasoning as ResilientImage: the QR URL's primary hosting scheme
+ * isn't guaranteed to work, so try every known fallback pattern before
+ * giving up — otherwise the card silently fails to build the moment the
+ * first URL scheme doesn't load for this account/file. */
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  const candidates = driveImageCandidates(src);
+  let lastErr: unknown;
+  for (const candidate of candidates) {
+    try {
+      return await loadImageOnce(candidate);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('image load failed');
 }
 
 function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {

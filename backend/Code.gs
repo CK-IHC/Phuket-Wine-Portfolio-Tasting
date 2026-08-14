@@ -279,8 +279,17 @@ function uploadImage(p) {
 // registration. Registrations store which round they belong to (RoundId/
 // RoundName on the Registrations sheet).
 
+// Sheets treats a bare "9/16"-style cell as a date to auto-format (same
+// class of bug as the Date/StartTime/EndTime columns) — "1/1" silently
+// becomes Jan 1, "9/16" becomes Sep 16, etc. Store a word instead of a
+// fraction so there's nothing date-shaped for Sheets to "helpfully" parse.
+const ASPECT_TO_CELL = { '16/9': 'wide', '1/1': 'square', '4/3': 'classic', '9/16': 'tall' };
+const CELL_TO_ASPECT = { wide: '16/9', square: '1/1', classic: '4/3', tall: '9/16' };
+
 function readRounds() {
-  return sheetToObjects(getSheet('Rounds', ROUND_HEADERS));
+  const rows = sheetToObjects(getSheet('Rounds', ROUND_HEADERS));
+  rows.forEach((r) => { r.BannerAspect = CELL_TO_ASPECT[r.BannerAspect] || r.BannerAspect; });
+  return rows;
 }
 
 function addRound(p) {
@@ -288,7 +297,7 @@ function addRound(p) {
   const id = 'round-' + Date.now();
   sh.appendRow([
     id, p.name || '', p.date || '', p.startTime || '', p.endTime || '', p.venue || '', p.capacity || 0, p.status || 'closed',
-    p.textTh || '', p.textEn || '', (p.imageUrls || []).join(','), p.bannerAspect || '16/9', p.published !== false,
+    p.textTh || '', p.textEn || '', (p.imageUrls || []).join(','), ASPECT_TO_CELL[p.bannerAspect] || 'wide', p.published !== false,
   ]);
   return { ok: true, id };
 }
@@ -300,10 +309,11 @@ function updateRound(p) {
     if (String(data[i][0]) === String(p.id)) {
       const headers = data[0];
       const setCol = (name, value) => sh.getRange(i + 1, headers.indexOf(name) + 1).setValue(value);
-      ['Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','BannerAspect','Published'].forEach(key => {
+      ['Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','Published'].forEach(key => {
         const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
         if (p[lowerKey] !== undefined) setCol(key, p[lowerKey]);
       });
+      if (p.bannerAspect !== undefined) setCol('BannerAspect', ASPECT_TO_CELL[p.bannerAspect] || 'wide');
       if (p.imageUrls !== undefined) setCol('ImageUrls', (p.imageUrls || []).join(','));
       return { ok: true };
     }
