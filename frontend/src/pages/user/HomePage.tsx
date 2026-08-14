@@ -7,7 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Blueprint } from '../../components/ui/Blueprint';
 import { BannerCarousel } from '../../components/BannerCarousel';
 import { api } from '../../lib/api';
-import { formatRoundDateTime } from '../../lib/format';
+import { formatDateStringOnly } from '../../lib/format';
 import type { EventRound } from '../../lib/types';
 
 export function HomePage() {
@@ -64,7 +64,9 @@ export function HomePage() {
               <h3 style={{ margin: 0 }}>{round.name}</h3>
               <p style={{ fontSize: 15, lineHeight: 1.6, margin: 0 }}>{lang === 'th' ? round.textTh : round.textEn}</p>
               <p style={{ fontSize: 13, marginTop: 4, marginBottom: 0, fontWeight: 600 }}>
-                {formatRoundDateTime(round.date, round.startTime, round.endTime, lang)}
+                {formatDateStringOnly(round.date, lang)}
+                {round.startTime && ` · ${round.startTime}`}
+                {round.endTime && `–${round.endTime}`}
                 {round.venue && ` · ${round.venue}`}
               </p>
 

@@ -46,24 +46,6 @@ export function formatDateStringOnly(dateStr: string | undefined, lang: Lang): s
   return `${d} ${months[m - 1]} ${y}`;
 }
 
-/** dd-mmm-yyyy, HH:mm — used for the round announcement date/time on the
- * Home page. Takes a "YYYY-MM-DD" date string plus separate start/end
- * "HH:mm" time strings (already stored that way on EventRound). */
-export function formatRoundDateTime(
-  dateStr: string | undefined,
-  startTime: string | undefined,
-  endTime: string | undefined,
-  lang: Lang
-): string {
-  if (!dateStr) return '-';
-  const [y, m, d] = dateOnlyPart(dateStr).split('-').map(Number);
-  if (!y || !m || !d) return dateStr;
-  const months = lang === 'th' ? MONTH_TH : MONTH_EN;
-  const datePart = `${String(d).padStart(2, '0')}-${months[m - 1]}-${y}`;
-  const timePart = startTime ? `, ${startTime}${endTime ? `–${endTime}` : ''}` : '';
-  return `${datePart}${timePart}`;
-}
-
 export function dataAsOfLabel(lang: Lang): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
