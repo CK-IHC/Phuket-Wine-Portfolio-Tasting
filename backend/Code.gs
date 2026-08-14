@@ -10,7 +10,11 @@ const FOLDER_ID = '1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X';
 const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName','AnswersJson'];
 // No password column — admin/staff sign in with phone number only (matched against Active users).
 const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
-const FORM_HEADERS = ['FieldsJson'];
+// One row per question — Options stays as compact JSON since a question can
+// have any number of them, but every other property is its own column so
+// the form can be read/skimmed directly in the Sheet instead of as one
+// opaque JSON blob.
+const FORM_HEADERS = ['Id', 'Type', 'Label', 'Required', 'Placeholder', 'MaxSelect', 'OptionsJson', 'QrUrl', 'QrCaption'];
 // A round is both the registerable session and its Home-page announcement —
 // creating one creates the other (see the Rounds section below).
 const ROUND_HEADERS = ['Id','Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','ImageUrls','BannerAspect','Published'];
@@ -318,17 +322,51 @@ function deleteRound(id) {
 
 // ───────────────────────── Form Builder ─────────────────────────
 
+function fieldToRow_(f) {
+  return [f.id, f.type, f.label, !!f.required, f.placeholder || '', f.maxSelect || '', JSON.stringify(f.options || []), f.qrUrl || '', f.qrCaption || ''];
+}
+
+function rowToField_(r) {
+  const field = { id: r.Id, type: r.Type, label: r.Label, required: r.Required === true || r.Required === 'TRUE', placeholder: r.Placeholder || '' };
+  try { field.options = r.OptionsJson ? JSON.parse(r.OptionsJson) : []; } catch (e) { field.options = []; }
+  if (r.MaxSelect) field.maxSelect = Number(r.MaxSelect);
+  if (r.Type === 'qr') { field.qrUrl = r.QrUrl || ''; field.qrCaption = r.QrCaption || ''; }
+  return field;
+}
+
+/** The FormFields sheet used to be a single JSON blob in one cell (header
+ * "FieldsJson"). Redeploying code never touches an existing sheet's shape,
+ * so on first read under the new row-per-question layout, migrate that old
+ * blob into real rows once. */
+function migrateFormFieldsSheet_() {
+  const ss = getSS();
+  const sh = ss.getSheetByName('FormFields');
+  if (!sh) return;
+  const lastCol = sh.getLastColumn();
+  const headers = lastCol > 0 ? sh.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  if (headers[0] !== 'FieldsJson') return;
+  const raw = sh.getRange(2, 1).getValue();
+  let fields = DEFAULT_FORM_FIELDS;
+  if (raw) { try { fields = JSON.parse(raw); } catch (e) {} }
+  sh.clear();
+  sh.appendRow(FORM_HEADERS);
+  const rows = fields.map(fieldToRow_);
+  if (rows.length) sh.getRange(2, 1, rows.length, FORM_HEADERS.length).setValues(rows);
+}
+
 function readFormFields() {
-  const sh = getSheet('FormFields', FORM_HEADERS);
-  const val = sh.getRange(2, 1).getValue();
-  if (!val) return DEFAULT_FORM_FIELDS;
-  try { return JSON.parse(val); } catch (e) { return DEFAULT_FORM_FIELDS; }
+  migrateFormFieldsSheet_();
+  const rows = sheetToObjects(getSheet('FormFields', FORM_HEADERS));
+  if (!rows.length) return DEFAULT_FORM_FIELDS;
+  return rows.map(rowToField_);
 }
 
 function saveFormFields(fields) {
+  migrateFormFieldsSheet_();
   const sh = getSheet('FormFields', FORM_HEADERS);
   if (sh.getLastRow() > 1) sh.deleteRows(2, sh.getLastRow() - 1);
-  sh.appendRow([JSON.stringify(fields)]);
+  const rows = fields.map(fieldToRow_);
+  if (rows.length) sh.getRange(2, 1, rows.length, FORM_HEADERS.length).setValues(rows);
   return { ok: true };
 }
 

@@ -2,6 +2,7 @@ import type { FormField } from '../lib/types';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Field } from './ui/Field';
 import { Button } from './ui/Button';
+import { ResilientImage } from './ResilientImage';
 
 export type FieldValue = string | string[] | undefined;
 
@@ -31,7 +32,7 @@ export function DynamicFormField({
         <div className="card" style={{ alignItems: 'center', textAlign: 'center', gap: 10 }}>
           <div style={{ width: 180, height: 180 }}>
             {field.qrUrl ? (
-              <img src={field.qrUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <ResilientImage src={field.qrUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
               <div style={{ width: '100%', height: '100%', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span className="text-muted" style={{ fontFamily: 'monospace', fontSize: 12 }}>QR CODE</span>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Banner, BannerAspect } from '../lib/types';
 import { Blueprint } from './ui/Blueprint';
 import { Lightbox } from './ui/Lightbox';
+import { ResilientImage } from './ResilientImage';
 
 const AUTOPLAY_MS = 5000;
 
@@ -39,7 +40,7 @@ export function BannerCarousel({ banners, aspect }: { banners: Banner[]; aspect:
               onClick={() => b.url && setLightboxSrc(b.url)}
             >
               {b.url ? (
-                <img src={b.url} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }} />
+                <ResilientImage src={b.url} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <span className="text-muted" style={{ fontFamily: 'monospace', fontSize: 12 }}>Banner {i + 1}</span>

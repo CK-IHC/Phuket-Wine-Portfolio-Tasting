@@ -6,6 +6,7 @@ import type { EventRound, Registration } from '../../lib/types';
 import { formatSubmitted } from '../../lib/format';
 import { Button } from '../../components/ui/Button';
 import { Lightbox } from '../../components/ui/Lightbox';
+import { ResilientImage } from '../../components/ResilientImage';
 
 export function SlipVerificationPage() {
   const { t, lang } = useLanguage();
@@ -94,7 +95,7 @@ export function SlipVerificationPage() {
               onClick={() => setSlipReg(r)}
             >
               {r.slipUrl ? (
-                <img src={r.slipUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <ResilientImage src={r.slipUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               ) : (
                 <span className="text-muted" style={{ fontSize: 12, fontFamily: 'monospace' }}>SLIP IMAGE</span>
               )}
