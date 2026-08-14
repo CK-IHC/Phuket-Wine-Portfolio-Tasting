@@ -6,6 +6,7 @@ import type { FieldType, FormField } from '../../lib/types';
 import { Button } from '../../components/ui/Button';
 import { Field } from '../../components/ui/Field';
 import { DynamicFormField, fieldLabel } from '../../components/DynamicFormField';
+import { diagnoseImageLoadError } from '../../lib/diagnoseImage';
 import type { TrKey } from '../../i18n/translations';
 
 const TOOLBOX: { type: FieldType; labelKey: TrKey }[] = [
@@ -183,7 +184,15 @@ export function FormBuilderPage() {
                 {f.type === 'qr' && (
                   <>
                     <div style={{ width: 100, height: 100, marginTop: 8, background: 'var(--color-surface-raised)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      {f.qrUrl ? <img src={f.qrUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span className="text-muted" style={{ fontSize: 11 }}>QR CODE</span>}
+                      {f.qrUrl ? (
+                        <img
+                          src={f.qrUrl}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          onError={async () => toast(`${t('toastImageLoadFailed')}: ${await diagnoseImageLoadError(f.qrUrl!)}`)}
+                        />
+                      ) : (
+                        <span className="text-muted" style={{ fontSize: 11 }}>QR CODE</span>
+                      )}
                     </div>
                     <div
                       style={{
@@ -241,7 +250,15 @@ export function FormBuilderPage() {
               {selected.type === 'qr' && (
                 <Field label={t('typeQr')}>
                   <div style={{ width: 120, height: 120, marginBottom: 8, background: 'var(--color-surface)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {selected.qrUrl ? <img src={selected.qrUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span className="text-muted" style={{ fontSize: 11 }}>QR CODE</span>}
+                    {selected.qrUrl ? (
+                      <img
+                        src={selected.qrUrl}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        onError={async () => toast(`${t('toastImageLoadFailed')}: ${await diagnoseImageLoadError(selected.qrUrl!)}`)}
+                      />
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: 11 }}>QR CODE</span>
+                    )}
                   </div>
                   <input type="file" accept="image/*" className="input" onChange={(e) => {
                     const file = e.target.files?.[0];

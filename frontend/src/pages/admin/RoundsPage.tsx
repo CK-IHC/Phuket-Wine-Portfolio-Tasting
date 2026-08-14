@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
 import type { BannerAspect, EventRound } from '../../lib/types';
 import { formatDateStringOnly } from '../../lib/format';
+import { diagnoseImageLoadError } from '../../lib/diagnoseImage';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
 import { Field } from '../../components/ui/Field';
@@ -224,7 +225,15 @@ export function RoundsPage() {
               {draft.banners.map((b, i) => (
                 <div key={b.id} style={{ width: 110, display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ width: 110, aspectRatio: draft.bannerAspect.replace('/', ' / '), background: 'var(--color-surface)', border: '1px solid var(--color-divider)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {b.url ? <img src={b.url} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span className="text-muted" style={{ fontSize: 10 }}>Banner {i + 1}</span>}
+                    {b.url ? (
+                      <img
+                        src={b.url}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        onError={async () => toast(`${t('toastImageLoadFailed')}: ${await diagnoseImageLoadError(b.url)}`)}
+                      />
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: 10 }}>Banner {i + 1}</span>
+                    )}
                   </div>
                   <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => removeBanner(b.id)}>{t('removeImageBtn')}</button>
                 </div>
