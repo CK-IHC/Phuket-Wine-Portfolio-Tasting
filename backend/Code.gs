@@ -91,9 +91,35 @@ function sheetToObjects(sh) {
 function friendlyError_(err) {
   const msg = String(err);
   if (/access denied/i.test(msg) && /drive/i.test(msg)) {
-    return msg + ' — สิทธิ์เข้าถึง Google Drive หมดอายุ/ยังไม่ได้อนุญาต: เปิดโปรเจกต์นี้ที่ script.google.com, เลือกฟังก์ชันใดก็ได้จาก dropdown แล้วกด Run 1 ครั้ง, กด "Review permissions" > เลือกบัญชี > Advanced > Go to [ชื่อโปรเจกต์] (unsafe) > Allow. ถ้าเกิดซ้ำทุกสัปดาห์ ให้ไปที่ Google Cloud Console > OAuth consent screen แล้วเปลี่ยน Publishing status เป็น Internal (ถ้าเป็นบัญชี Workspace) เพื่อไม่ให้สิทธิ์หมดอายุอีก';
+    return msg + ' — ดูวิธีแก้ใน SETUP.md หัวข้อ "Access denied: DriveApp" หรือลองเปิด [Web App URL]?action=diag เพื่อดูรายละเอียด';
   }
   return msg;
+}
+
+/** Visit <web app URL>?action=diag directly in a browser to see exactly who
+ * this deployment executes as and whether it can actually reach Drive right
+ * now — this is the one thing that differs between an editor test run
+ * (always runs as you) and a real request hitting the deployed web app, so
+ * it's the fastest way to see what's actually happening server-side instead
+ * of guessing from the short error message alone. */
+function diag() {
+  const out = { ok: true };
+  try { out.effectiveUser = Session.getEffectiveUser().getEmail() || '(empty)'; } catch (err) { out.effectiveUser = 'ERROR: ' + String(err); }
+  try { out.activeUser = Session.getActiveUser().getEmail() || '(empty)'; } catch (err) { out.activeUser = 'ERROR: ' + String(err); }
+  try { out.scriptTimeZone = Session.getScriptTimeZone(); } catch (err) { out.scriptTimeZone = 'ERROR: ' + String(err); }
+  try {
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    out.driveAccess = 'OK — folder name: ' + folder.getName();
+  } catch (err) {
+    out.driveAccess = 'FAILED: ' + String(err);
+  }
+  try {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    out.sheetAccess = 'OK — spreadsheet name: ' + ss.getName();
+  } catch (err) {
+    out.sheetAccess = 'FAILED: ' + String(err);
+  }
+  return out;
 }
 
 function doGet(e) {
@@ -104,6 +130,7 @@ function doGet(e) {
     if (action === 'getUsers') return json({ ok: true, data: readUsers() });
     if (action === 'getDashboardStats') return json({ ok: true, data: computeStats() });
     if (action === 'getRounds') return json({ ok: true, data: readRounds() });
+    if (action === 'diag') return json(diag());
     return json({ ok: false, error: 'unknown action: ' + action });
   } catch (err) {
     return json({ ok: false, error: friendlyError_(err) });
