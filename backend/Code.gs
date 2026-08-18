@@ -239,14 +239,13 @@ function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
   if (subfolderName) folder = getOrCreateSubfolder_(folder, subfolderName);
   const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, fileName);
   const file = folder.createFile(blob);
-  // Serving the file through this Web App's own doGet (returning a raw Blob)
-  // reliably fails live with "the returned value was not a supported return
-  // type" — so instead, share the file and link to Google's own CDN, which
-  // is what every <img> tag actually needs: a URL Google itself serves.
-  // Sharing must succeed or the link is useless, so let a failure here
-  // (e.g. a Workspace policy blocking "anyone with the link") surface as a
-  // real upload error instead of silently returning a dead URL.
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  // Do NOT call file.setSharing() here — diag confirmed this account's OAuth
+  // grant can create files but not change per-file sharing (a narrower
+  // permission tier than plain file creation). A new file created inside a
+  // folder that is ITSELF shared "Anyone with the link" inherits that same
+  // public-viewer access automatically, with no API call needed — so the
+  // parent folder's sharing (set once, manually, in the Drive UI — see
+  // SETUP.md) is what makes these links work now, not a per-file API call.
   return 'https://lh3.googleusercontent.com/d/' + file.getId();
 }
 
