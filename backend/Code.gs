@@ -109,9 +109,21 @@ function diag() {
   try { out.scriptTimeZone = Session.getScriptTimeZone(); } catch (err) { out.scriptTimeZone = 'ERROR: ' + String(err); }
   try {
     const folder = DriveApp.getFolderById(FOLDER_ID);
-    out.driveAccess = 'OK — folder name: ' + folder.getName();
+    out.driveReadAccess = 'OK — folder name: ' + folder.getName() + ', owner: ' + folder.getOwner().getEmail();
   } catch (err) {
-    out.driveAccess = 'FAILED: ' + String(err);
+    out.driveReadAccess = 'FAILED: ' + String(err);
+  }
+  // Reading folder metadata only needs Viewer access — actually uploading a
+  // file needs Editor/Content-manager access on that folder specifically,
+  // which is a completely different, Drive-sharing-level permission that no
+  // amount of re-authorizing OAuth scopes can grant. Test the real thing.
+  try {
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const testFile = folder.createFile('diag-write-test.txt', 'ok', MimeType.PLAIN_TEXT);
+    testFile.setTrashed(true);
+    out.driveWriteAccess = 'OK — created and removed a test file successfully';
+  } catch (err) {
+    out.driveWriteAccess = 'FAILED: ' + String(err);
   }
   try {
     const ss = SpreadsheetApp.openById(SHEET_ID);
