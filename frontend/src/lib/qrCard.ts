@@ -48,10 +48,11 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: num
   return curY + lineHeight;
 }
 
-/** Renders a 9:16 portrait "share card": heading, QR code, caption box. */
+/** Renders a 1080x1350 "share card": bold "QR PAYMENT" title, event name,
+ * QR code, caption box. */
 export async function buildQrCardBlob(opts: { qrUrl: string; caption?: string; heading?: string }): Promise<Blob> {
   const W = 1080;
-  const H = 1920;
+  const H = 1350;
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
@@ -61,7 +62,7 @@ export async function buildQrCardBlob(opts: { qrUrl: string; caption?: string; h
   ctx.fillStyle = '#f2f2f3';
   ctx.fillRect(0, 0, W, H);
 
-  const pad = 72;
+  const pad = 60;
   ctx.strokeStyle = '#b9bec2';
   ctx.lineWidth = 2;
   ctx.strokeRect(pad, pad, W - pad * 2, H - pad * 2);
@@ -77,33 +78,37 @@ export async function buildQrCardBlob(opts: { qrUrl: string; caption?: string; h
     ctx.stroke();
   });
 
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#1d1f20';
+  ctx.font = '800 76px "Barlow Condensed", sans-serif';
+  ctx.fillText('QR PAYMENT', W / 2, 160);
+
   let cursorY = 220;
   if (opts.heading) {
-    ctx.fillStyle = '#1d1f20';
-    ctx.font = '600 58px "Barlow Condensed", sans-serif';
-    ctx.textAlign = 'center';
-    cursorY = wrapText(ctx, opts.heading, W / 2, cursorY, W - pad * 4, 66);
+    ctx.fillStyle = '#5b6266';
+    ctx.font = '600 40px "Barlow Condensed", sans-serif';
+    cursorY = wrapText(ctx, opts.heading, W / 2, cursorY, W - pad * 4, 48);
   }
 
   const img = await loadImage(opts.qrUrl);
-  const qrSize = 640;
+  const qrSize = 560;
   const qrX = (W - qrSize) / 2;
-  const qrY = 420;
+  const qrY = 280;
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(qrX - 24, qrY - 24, qrSize + 48, qrSize + 48);
   ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
 
   if (opts.caption) {
-    const boxY = qrY + qrSize + 80;
+    const boxY = qrY + qrSize + 70;
     const boxX = pad + 40;
     const boxW = W - (pad + 40) * 2;
     ctx.strokeStyle = '#d7dadc';
     ctx.lineWidth = 2;
-    ctx.strokeRect(boxX, boxY, boxW, 220);
-    ctx.fillStyle = '#5b6266';
-    ctx.font = '400 38px Barlow, sans-serif';
+    ctx.strokeRect(boxX, boxY, boxW, 200);
+    ctx.fillStyle = '#1d1f20';
+    ctx.font = '700 46px Barlow, sans-serif';
     ctx.textAlign = 'center';
-    wrapText(ctx, opts.caption, W / 2, boxY + 70, boxW - 80, 50);
+    wrapText(ctx, opts.caption, W / 2, boxY + 78, boxW - 80, 58);
   }
 
   return new Promise((resolve, reject) => {
