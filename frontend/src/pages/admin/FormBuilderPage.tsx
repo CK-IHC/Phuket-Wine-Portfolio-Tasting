@@ -199,6 +199,7 @@ export function FormBuilderPage() {
                       style={{
                         marginTop: 6, maxWidth: 260, border: '1px dashed var(--color-divider)', borderRadius: 'var(--radius-md)',
                         padding: '6px 10px', fontSize: 12, color: f.qrCaption ? 'var(--color-text)' : 'var(--color-text-muted)',
+                        whiteSpace: 'pre-wrap',
                       }}
                     >
                       {f.qrCaption || t('qrCaptionLabel')}

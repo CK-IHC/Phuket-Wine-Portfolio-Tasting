@@ -30,21 +30,29 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   throw lastErr instanceof Error ? lastErr : new Error('image load failed');
 }
 
+/** Wraps text to fit maxWidth, same as before — but first splits on '\n' so
+ * an explicit Enter in the source text (e.g. a caption typed across
+ * multiple lines) always starts a new line here too, instead of being
+ * swallowed into one run-on line with no spaces to wrap on. */
 function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-  const words = text.split(' ');
-  let line = '';
   let curY = y;
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (line && ctx.measureText(test).width > maxWidth) {
-      ctx.fillText(line, x, curY);
-      line = word;
-      curY += lineHeight;
-    } else {
-      line = test;
+  const paragraphs = text.split('\n');
+  paragraphs.forEach((paragraph, i) => {
+    if (i > 0) curY += lineHeight;
+    const words = paragraph.split(' ');
+    let line = '';
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (line && ctx.measureText(test).width > maxWidth) {
+        ctx.fillText(line, x, curY);
+        line = word;
+        curY += lineHeight;
+      } else {
+        line = test;
+      }
     }
-  }
-  if (line) ctx.fillText(line, x, curY);
+    ctx.fillText(line, x, curY);
+  });
   return curY + lineHeight;
 }
 
