@@ -125,6 +125,28 @@ function diag() {
   } catch (err) {
     out.driveWriteAccess = 'FAILED: ' + String(err);
   }
+  // setSharing() changes who else can view a file — a different, more
+  // sensitive permission than just creating it. Test it in isolation, since
+  // driveWriteAccess above never calls it.
+  try {
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const testFile = folder.createFile('diag-sharing-test.txt', 'ok', MimeType.PLAIN_TEXT);
+    testFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    testFile.setTrashed(true);
+    out.driveSharingAccess = 'OK — set sharing on a test file successfully';
+  } catch (err) {
+    out.driveSharingAccess = 'FAILED: ' + String(err);
+  }
+  // The most direct test: run the exact same function the real upload uses,
+  // with a tiny 1x1 PNG, so this reproduces the real failure exactly instead
+  // of an approximation of it.
+  try {
+    const tinyPngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+    const url = saveBase64ToDrive(tinyPngBase64, 'diag-real-path-test.png', 'image/png', 'Banners');
+    out.realUploadPathTest = 'OK — ' + url;
+  } catch (err) {
+    out.realUploadPathTest = 'FAILED: ' + String(err);
+  }
   try {
     const ss = SpreadsheetApp.openById(SHEET_ID);
     out.sheetAccess = 'OK — spreadsheet name: ' + ss.getName();
