@@ -90,7 +90,7 @@ export function seedRegistrations(): Registration[] {
       const source = pick(SOURCE_OPTIONS, seed + 2);
       regs.push({
         id: String(seq),
-        refNo: `${year + 543}-${String(seq).padStart(3, '0')}`,
+        refNo: `${year}-${String(seq).padStart(3, '0')}`,
         name, phone, email, area, arrival, source,
         wines,
         prices,

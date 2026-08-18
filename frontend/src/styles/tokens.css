@@ -2,7 +2,9 @@
   Design tokens — Phuket Wine Portfolio Tasting
   "Industry / blueprint" system: squared corners, thin hairlines, corner
   crosses, a single steel-blue brand accent with a 100–900 tonal ramp,
-  Barlow Condensed for display type, Barlow for body copy.
+  TH Sarabun PSK throughout (heading and body alike, matching how it's
+  used in Thai official documents/forms) — falls back to Sarabun
+  (web-loaded) when TH Sarabun PSK isn't installed locally.
 */
 
 :root {
@@ -40,8 +42,8 @@
   --color-neutral-700: #5f6569;
 
   /* ── Typography ───────────────────────────────────────────── */
-  --font-heading: 'Barlow Condensed', 'Barlow', system-ui, sans-serif;
-  --font-body: 'Barlow', system-ui, -apple-system, sans-serif;
+  --font-heading: 'TH Sarabun PSK', 'Sarabun', system-ui, sans-serif;
+  --font-body: 'TH Sarabun PSK', 'Sarabun', system-ui, -apple-system, sans-serif;
 
   /* ── Spacing (density 0.85×) ──────────────────────────────── */
   --space-1: 3px;

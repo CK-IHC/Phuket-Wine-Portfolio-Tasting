@@ -76,8 +76,8 @@ export const mockStore = {
     return store.rounds;
   },
   submitRegistration(reg: Omit<Registration, 'id' | 'refNo' | 'status' | 'submittedAt'>) {
-    const beYear = new Date().getFullYear() + 543;
-    const refNo = `${beYear}-${String(store.nextRefSeq).padStart(3, '0')}`;
+    const year = new Date().getFullYear();
+    const refNo = `${year}-${String(store.nextRefSeq).padStart(3, '0')}`;
     const full: Registration = {
       ...reg,
       id: String(Date.now()),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/api';
@@ -25,7 +25,8 @@ export function SlipVerificationPage() {
     api.getRegistrations()
       .then((data) => {
         setRegs(data);
-        setAmounts(Object.fromEntries(data.map((r) => [r.id, r.amount ? String(r.amount) : ''])));
+        // Amount starts blank on purpose — the admin confirms it fresh by
+        // eye against the slip image rather than trusting a pre-filled value.
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -87,58 +88,89 @@ export function SlipVerificationPage() {
       )}
       {allPending.length === 0 && <p className="text-muted">{t('noPending')}</p>}
       {allPending.length > 0 && pending.length === 0 && <p className="text-muted">{t('noSearchResults')}</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px,1fr))', gap: 14 }}>
-        {pending.map((r) => (
-          <div key={r.id} className="card" style={{ gap: 10 }}>
-            <div
-              style={{ width: '100%', aspectRatio: '4/3', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}
-              onClick={() => setSlipReg(r)}
-            >
-              {r.slipUrl ? (
-                <ResilientImage src={r.slipUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              ) : (
-                <span className="text-muted" style={{ fontSize: 12, fontFamily: 'monospace' }}>SLIP IMAGE</span>
-              )}
-            </div>
-            <div>
-              <div style={{ fontFamily: 'var(--font-heading)', fontSize: 16 }}>{r.refNo} — {r.name}</div>
-              <div className="text-muted" style={{ fontSize: 12 }}>{r.phone} · {t('submittedLabel')} {formatSubmitted(r.submittedAt, lang)}</div>
-              {r.roundName && <div className="text-muted" style={{ fontSize: 12 }}>{t('colRound')}: {r.roundName}</div>}
-            </div>
-            <div className="field" style={{ margin: 0 }}>
-              <label>{t('amountTransferredLabel')}</label>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                placeholder={t('amountTransferredPlaceholder')}
-                value={amounts[r.id] ?? ''}
-                onChange={(e) => setAmounts((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                onBlur={() => saveAmount(r)}
-              />
-            </div>
-            {rejectingId === r.id ? (
-              <>
-                <textarea
-                  className="input"
-                  placeholder={t('rejectReasonPlaceholder')}
-                  value={reasons[r.id] || ''}
-                  onChange={(e) => setReasons((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button variant="secondary" style={{ flex: 1 }} onClick={() => setRejectingId(null)}>{t('cancelBtn')}</Button>
-                  <Button variant="primary" style={{ flex: 1 }} onClick={() => confirmReject(r)}>{t('confirmRejectBtn')}</Button>
-                </div>
-              </>
-            ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="secondary" style={{ flex: 1 }} onClick={() => setRejectingId(r.id)}>{t('rejectBtn')}</Button>
-                <Button variant="primary" style={{ flex: 1 }} onClick={() => approve(r)}>{t('approveBtn')}</Button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      {pending.length > 0 && (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('colSlip')}</th>
+                <th>{t('colRef')}</th>
+                <th>{t('colName')}</th>
+                <th>{t('colPhone')}</th>
+                <th>{t('colRound')}</th>
+                <th>{t('amountTransferredLabel')}</th>
+                <th>{t('colStatus')}</th>
+                <th>{t('colUploadDate')}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {pending.map((r) => (
+                <Fragment key={r.id}>
+                  <tr>
+                    <td>
+                      <div
+                        style={{ width: 56, height: 56, background: 'var(--color-surface)', border: '1px solid var(--color-divider)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}
+                        onClick={() => setSlipReg(r)}
+                      >
+                        {r.slipUrl ? (
+                          <ResilientImage src={r.slipUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: 9, fontFamily: 'monospace' }}>SLIP</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>{r.refNo}</td>
+                    <td>{r.name}</td>
+                    <td>{r.phone}</td>
+                    <td>{r.roundName || '—'}</td>
+                    <td>
+                      <input
+                        className="input"
+                        style={{ width: 130 }}
+                        type="number"
+                        min={0}
+                        placeholder={t('amountTransferredPlaceholder')}
+                        value={amounts[r.id] ?? ''}
+                        onChange={(e) => setAmounts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                        onBlur={() => saveAmount(r)}
+                      />
+                    </td>
+                    <td><span className="tag tag-status-pending">{t('statPending')}</span></td>
+                    <td>{formatSubmitted(r.submittedAt, lang)}</td>
+                    <td>
+                      {rejectingId === r.id ? (
+                        <Button variant="secondary" onClick={() => setRejectingId(null)}>{t('cancelBtn')}</Button>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <Button variant="secondary" onClick={() => setRejectingId(r.id)}>{t('rejectBtn')}</Button>
+                          <Button variant="primary" onClick={() => approve(r)}>{t('approveBtn')}</Button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                  {rejectingId === r.id && (
+                    <tr>
+                      <td colSpan={9} style={{ background: 'var(--color-surface)' }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '4px 0' }}>
+                          <textarea
+                            className="input"
+                            style={{ flex: 1, minHeight: 40 }}
+                            placeholder={t('rejectReasonPlaceholder')}
+                            value={reasons[r.id] || ''}
+                            onChange={(e) => setReasons((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                          />
+                          <Button variant="primary" onClick={() => confirmReject(r)}>{t('confirmRejectBtn')}</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {slipReg && (
         <Lightbox src={slipReg.slipUrl || undefined} fallbackLabel={`SLIP IMAGE — ${slipReg.refNo}`} onClose={() => setSlipReg(null)} />
       )}

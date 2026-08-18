@@ -11,13 +11,13 @@ import { DonutChart } from '../../components/charts/DonutChart';
 
 type Granularity = 'day' | 'month' | 'year';
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-function daysAgoISO(n: number) {
+function firstOfMonthISO() {
   const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+}
+function lastOfMonthISO() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
 }
 
 export function DashboardPage() {
@@ -28,8 +28,8 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [monthlyYear, setMonthlyYear] = useState('');
   const [granularity, setGranularity] = useState<Granularity>('day');
-  const [dateFrom, setDateFrom] = useState(daysAgoISO(6));
-  const [dateTo, setDateTo] = useState(todayISO());
+  const [dateFrom, setDateFrom] = useState(firstOfMonthISO());
+  const [dateTo, setDateTo] = useState(lastOfMonthISO());
 
   useEffect(() => {
     api.getRegistrations()

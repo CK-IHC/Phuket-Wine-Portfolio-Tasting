@@ -206,10 +206,10 @@ function readRegistrations() {
 }
 
 function nextRefNo() {
-  const beYear = new Date().getFullYear() + 543;
+  const year = new Date().getFullYear();
   const sh = getSheet('Registrations', REG_HEADERS);
   const count = Math.max(0, sh.getLastRow() - 1);
-  return beYear + '-' + String(count + 1).padStart(3, '0');
+  return year + '-' + String(count + 1).padStart(3, '0');
 }
 
 function getOrCreateSubfolder_(parentFolder, name) {

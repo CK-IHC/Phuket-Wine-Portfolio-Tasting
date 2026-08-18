@@ -1,4 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap');
+/* TH Sarabun PSK isn't hosted on Google Fonts (it's a locally-installed Thai
+ * government-standard font) — it's used first when present on the viewer's
+ * machine. Sarabun is loaded here as the web fallback: closest available
+ * Thai-native alternative for anyone who doesn't have it installed. */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap');
 
 * { box-sizing: border-box; }
 

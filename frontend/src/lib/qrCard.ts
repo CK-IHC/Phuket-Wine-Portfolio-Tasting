@@ -88,13 +88,13 @@ export async function buildQrCardBlob(opts: { qrUrl: string; caption?: string; h
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#1d1f20';
-  ctx.font = '800 76px "Barlow Condensed", sans-serif';
+  ctx.font = '800 76px "TH Sarabun PSK", Sarabun, sans-serif';
   ctx.fillText('QR PAYMENT', W / 2, 160);
 
   let cursorY = 220;
   if (opts.heading) {
     ctx.fillStyle = '#5b6266';
-    ctx.font = '600 40px "Barlow Condensed", sans-serif';
+    ctx.font = '600 40px "TH Sarabun PSK", Sarabun, sans-serif';
     cursorY = wrapText(ctx, opts.heading, W / 2, cursorY, W - pad * 4, 48);
   }
 
@@ -114,7 +114,7 @@ export async function buildQrCardBlob(opts: { qrUrl: string; caption?: string; h
     ctx.lineWidth = 2;
     ctx.strokeRect(boxX, boxY, boxW, 200);
     ctx.fillStyle = '#1d1f20';
-    ctx.font = '700 46px Barlow, sans-serif';
+    ctx.font = '700 46px "TH Sarabun PSK", Sarabun, sans-serif';
     ctx.textAlign = 'center';
     wrapText(ctx, opts.caption, W / 2, boxY + 78, boxW - 80, 58);
   }
