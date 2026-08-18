@@ -70,6 +70,7 @@ export function SlipVerificationPage() {
   };
 
   const runPrint = () => {
+    const total = filtered.reduce((a, r) => a + (r.amount || 0), 0);
     printNow({
       title: t('verifyTitle'),
       subtitle: t(statusFilter === 'pending' ? 'statPending' : statusFilter === 'approved' ? 'statApproved' : 'statRejected'),
@@ -82,22 +83,32 @@ export function SlipVerificationPage() {
         { key: 'status', label: t('colStatus') },
         { key: 'uploadDate', label: t('colUploadDate') },
       ],
-      rows: filtered.map((r) => ({
-        refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '-',
-        amount: r.amount ? `฿${r.amount.toLocaleString()}` : '',
-        status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
-        uploadDate: formatSubmitted(r.submittedAt, lang),
-      })),
+      rows: [
+        ...filtered.map((r) => ({
+          refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '-',
+          amount: r.amount ? `฿${r.amount.toLocaleString()}` : '',
+          status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
+          uploadDate: formatSubmitted(r.submittedAt, lang),
+        })),
+        {
+          refNo: '', name: t('totalAmountRowLabel'), phone: '', round: '',
+          amount: `฿${total.toLocaleString()}`, status: '', uploadDate: '',
+        },
+      ],
     });
   };
 
   const exportExcel = () => {
+    const total = filtered.reduce((a, r) => a + (r.amount || 0), 0);
     exportRowsToExcel(
-      filtered.map((r) => ({
-        refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '',
-        amount: r.amount || '', status: r.status, uploadDate: formatSubmitted(r.submittedAt, lang),
-        slipLink: r.slipUrl || '',
-      })),
+      [
+        ...filtered.map((r) => ({
+          refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '',
+          amount: r.amount || '', status: r.status, uploadDate: formatSubmitted(r.submittedAt, lang),
+          slipLink: r.slipUrl || '',
+        })),
+        { refNo: '', name: t('totalAmountRowLabel'), phone: '', round: '', amount: total, status: '', uploadDate: '', slipLink: '' },
+      ],
       [
         { key: 'refNo', label: t('colRef') }, { key: 'name', label: t('colName') },
         { key: 'phone', label: t('colPhone') }, { key: 'round', label: t('colRound') },

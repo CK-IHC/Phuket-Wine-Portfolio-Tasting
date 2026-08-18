@@ -57,6 +57,7 @@ export const TR = {
   colUploadDate: { th: 'วันที่ Upload', en: 'Upload Date' },
   colSlipLink: { th: 'ลิงก์รูปสลิป', en: 'Slip Image Link' },
   noRecords: { th: 'ไม่มีรายการ', en: 'No records' },
+  totalAmountRowLabel: { th: 'จำนวนเงินรวม', en: 'Total Amount' },
   colEmail: { th: 'อีเมล', en: 'Email' },
   colArea: { th: 'พื้นที่', en: 'Area' },
   colArrival: { th: 'เวลาที่คาดว่าจะถึง', en: 'Est. Arrival' },
