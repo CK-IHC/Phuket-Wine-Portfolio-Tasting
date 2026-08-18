@@ -14,7 +14,7 @@ export const TR = {
   successTag: { th: 'ส่งข้อมูลสำเร็จ', en: 'Submitted Successfully' },
   successTitle: { th: 'ขอบคุณที่ลงทะเบียน', en: 'Thank You for Registering' },
   successRefLabel: { th: 'เลขที่อ้างอิงของคุณคือ', en: 'Your reference number is' },
-  successNote: { th: 'ทีมงานจะตรวจสอบสลิปและยืนยันการลงทะเบียนภายใน 24 ชั่วโมง', en: 'Our team will verify your slip and confirm registration within 24 hours' },
+  successNote: { th: 'ทีมงานจะตรวจสอบสลิปและยืนยันการลงทะเบียน', en: 'Our team will verify your slip and confirm registration' },
   backHomeBtn: { th: 'กลับหน้าหลัก', en: 'Back to Home' },
   slipLabel: { th: 'แนบสลิปการโอนเงิน', en: 'Attach payment slip' },
   slipFileDefault: { th: 'แตะเพื่อเลือกรูปภาพ หรือถ่ายรูปสลิป', en: 'Tap to choose an image or take a photo of your slip' },
