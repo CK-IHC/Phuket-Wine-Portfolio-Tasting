@@ -189,37 +189,40 @@ export function RegistrationListPage() {
         </div>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th><input type="checkbox" checked={isAllFilteredSelected} onChange={toggleSelectAllFiltered} /></th>
-              <th>{t('colRef')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th><th>{t('colRound')}</th>
-              <th>{t('colAmountTransferred')}</th>
-              <th>{t('colStatus')}</th><th>{t('colSlip')}</th><th /><th />
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((r) => (
-              <tr key={r.id}>
-                <td><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} /></td>
-                <td>{r.refNo}</td>
-                <td>{r.name}</td>
-                <td>{r.phone}</td>
-                <td>{r.roundName || '-'}</td>
-                <td>฿{r.amount.toLocaleString()}</td>
-                <td><StatusTag status={r.status} /></td>
-                <td><button className="btn btn-ghost" onClick={() => setSlipReg(r)}>{t('viewSlipBtn')}</button></td>
-                <td><button className="btn btn-ghost" onClick={() => setDetailReg(r)}>{t('viewDetailBtn')}</button></td>
-                <td style={{ display: 'flex', gap: 4 }}>
-                  <button className="btn btn-ghost" onClick={() => setEditingReg(r)}>{t('editRowBtn')}</button>
-                  <button className="btn btn-ghost" onClick={() => deleteReg(r)}>{t('deleteBtn')}</button>
-                </td>
+      {regs.length > 0 && filtered.length === 0 && <p className="text-muted">{t('noSearchResults')}</p>}
+      {filtered.length > 0 && (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" checked={isAllFilteredSelected} onChange={toggleSelectAllFiltered} /></th>
+                <th>{t('colRef')}</th><th>{t('colName')}</th><th>{t('colPhone')}</th><th>{t('colRound')}</th>
+                <th>{t('colAmountTransferred')}</th>
+                <th>{t('colStatus')}</th><th>{t('colSlip')}</th><th /><th />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={r.id}>
+                  <td><input type="checkbox" checked={selectedIds.has(r.id)} onChange={() => toggleSelect(r.id)} /></td>
+                  <td>{r.refNo}</td>
+                  <td>{r.name}</td>
+                  <td>{r.phone}</td>
+                  <td>{r.roundName || '-'}</td>
+                  <td>฿{r.amount.toLocaleString()}</td>
+                  <td><StatusTag status={r.status} /></td>
+                  <td><button className="btn btn-ghost" onClick={() => setSlipReg(r)}>{t('viewSlipBtn')}</button></td>
+                  <td><button className="btn btn-ghost" onClick={() => setDetailReg(r)}>{t('viewDetailBtn')}</button></td>
+                  <td style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn btn-ghost" onClick={() => setEditingReg(r)}>{t('editRowBtn')}</button>
+                    <button className="btn btn-ghost" onClick={() => deleteReg(r)}>{t('deleteBtn')}</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {detailReg && (
         <Dialog title={`${detailReg.refNo} — ${detailReg.name}`} onClose={() => setDetailReg(null)} maxWidth={520} actions={<Button variant="secondary" onClick={() => setDetailReg(null)}>{t('closeBtn')}</Button>}>
