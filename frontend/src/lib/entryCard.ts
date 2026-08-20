@@ -14,7 +14,6 @@ export interface EntryCardOptions {
   timeValue: string;
   venueLabel: string;
   venueValue: string;
-  footerNote: string;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -83,11 +82,18 @@ function drawVine(ctx: CanvasRenderingContext2D, x: number, y: number, flip: 1 |
 export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> {
   const W = 720;
   const H = 1080;
+  // Render at 2x and downscale via CSS/display only — a 720x1080 canvas
+  // looks soft once saved and viewed at real size (device pixel ratio),
+  // especially the QR code and small text. Everything below still works
+  // in the same 720x1080 coordinate space; only the physical pixel count
+  // (and therefore sharpness) changes.
+  const SCALE = 2;
   const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas not supported');
+  ctx.scale(SCALE, SCALE);
 
   ctx.fillStyle = '#eceef2';
   ctx.fillRect(0, 0, W, H);
@@ -127,7 +133,7 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   const panelY = cursorY + 40;
   const panelW = W - (pad + 24) * 2;
   const qrSize = 220;
-  const panelH = 500;
+  const panelH = 560;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(29,31,32,0.12)';
   ctx.shadowBlur = 24;
@@ -155,8 +161,9 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   ctx.font = '600 30px "TH Sarabun PSK", Sarabun, sans-serif';
   ctx.fillText(opts.name, panelX + innerPad, ty);
 
-  // QR code, top-right of the panel
-  const qrDataUrl = await QRCode.toDataURL(opts.refNo, { width: qrSize, margin: 0, color: { dark: '#1d1f20', light: '#ffffffff' } });
+  // QR code, top-right of the panel — generated at the same physical pixel
+  // density as the canvas so it stays crisp instead of being upscaled.
+  const qrDataUrl = await QRCode.toDataURL(opts.refNo, { width: qrSize * SCALE, margin: 0, color: { dark: '#1d1f20', light: '#ffffffff' } });
   const qrImg = await loadImage(qrDataUrl);
   const qrX = panelX + panelW - innerPad - qrSize;
   const qrY = panelY + 44;
@@ -195,13 +202,6 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
     ctx.fillStyle = '#3a4147';
     ctx.fillText(value, panelX + innerPad + 38 + labelW + 10, iy);
   });
-
-  // Footer note (below panel)
-  const fy = panelY + panelH + 50;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#4b5a63';
-  ctx.font = '500 21px "TH Sarabun PSK", Sarabun, sans-serif';
-  wrapText(ctx, opts.footerNote, W / 2, fy, W - pad * 3, 30);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
