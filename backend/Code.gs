@@ -148,6 +148,47 @@ function sheetToObjects(sh) {
   });
 }
 
+/** On-demand, visible version of fixPhoneColumn_ — writes the corrected
+ * Phone values back into the sheet and reports whether the write actually
+ * stuck, so a "Convert to range" / column-type change can be verified from
+ * the browser instead of guessing. A Table column can silently re-coerce a
+ * written string back to Number the instant setValues() returns; this
+ * reads the range back afterward to catch that case explicitly. */
+function repairPhones() {
+  function repairSheet(name, headers) {
+    try {
+      const sh = getSheet(name, headers);
+      const lastCol = sh.getLastColumn();
+      const hdrs = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+      const idx = hdrs.indexOf('Phone');
+      if (idx === -1) return { sheet: name, status: 'no Phone column' };
+      const col = idx + 1;
+      const lastRow = sh.getLastRow();
+      if (lastRow < 2) return { sheet: name, status: 'no data rows' };
+      const range = sh.getRange(2, col, lastRow - 1, 1);
+      const before = range.getValues();
+      const numericBefore = before.filter(([v]) => typeof v === 'number').length;
+      if (numericBefore === 0) return { sheet: name, status: 'already OK', rows: before.length };
+      range.setValues(before.map(([v]) => [fixPhoneValue_(v)]));
+      const after = range.getValues();
+      const numericAfter = after.filter(([v]) => typeof v === 'number').length;
+      return {
+        sheet: name,
+        status: numericAfter > 0 ? 'BLOCKED — sheet reverted the write, still stored as Number (change the column type to Text, or Convert to range)' : 'repaired — values now stored as text in the sheet',
+        rowsFixed: numericBefore,
+        stillNumericAfterWrite: numericAfter,
+      };
+    } catch (err) {
+      return { sheet: name, status: 'FAILED: ' + String(err) };
+    }
+  }
+  return {
+    ok: true,
+    users: repairSheet('Users', USER_HEADERS),
+    registrations: repairSheet('Registrations', REG_HEADERS),
+  };
+}
+
 // ───────────────────────── doGet / doPost ─────────────────────────
 
 /** "Access denied: DriveApp" isn't a bug in this code — it means the script's
@@ -173,7 +214,7 @@ function friendlyError_(err) {
 // Bumped whenever diag() itself changes — the fastest way to tell whether
 // a "Deploy → New version" actually took effect: if this string isn't the
 // one you just added, the web app is still serving old code, full stop.
-const CODE_VERSION = 'phone-column-fix-crashproof-2';
+const CODE_VERSION = 'phone-column-repair-endpoint-3';
 
 function diag() {
   const out = { ok: true, codeVersion: CODE_VERSION };
@@ -244,6 +285,7 @@ function doGet(e) {
     if (action === 'getDashboardStats') return json({ ok: true, data: computeStats() });
     if (action === 'getRounds') return json({ ok: true, data: readRounds() });
     if (action === 'diag') return json(diag());
+    if (action === 'repairPhones') return json(repairPhones());
     return json({ ok: false, error: 'unknown action: ' + action });
   } catch (err) {
     return json({ ok: false, error: friendlyError_(err) });
