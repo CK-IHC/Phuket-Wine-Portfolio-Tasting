@@ -159,8 +159,19 @@ function friendlyError_(err) {
  * (always runs as you) and a real request hitting the deployed web app, so
  * it's the fastest way to see what's actually happening server-side instead
  * of guessing from the short error message alone. */
+// Bumped whenever diag() itself changes — the fastest way to tell whether
+// a "Deploy → New version" actually took effect: if this string isn't the
+// one you just added, the web app is still serving old code, full stop.
+const CODE_VERSION = 'phone-column-fix-crashproof-2';
+
 function diag() {
-  const out = { ok: true };
+  const out = { ok: true, codeVersion: CODE_VERSION };
+  try {
+    const users = readUsers();
+    out.usersReadTest = 'OK — ' + users.length + ' user row(s) read successfully';
+  } catch (err) {
+    out.usersReadTest = 'FAILED: ' + String(err);
+  }
   try { out.effectiveUser = Session.getEffectiveUser().getEmail() || '(empty)'; } catch (err) { out.effectiveUser = 'ERROR: ' + String(err); }
   try { out.activeUser = Session.getActiveUser().getEmail() || '(empty)'; } catch (err) { out.activeUser = 'ERROR: ' + String(err); }
   try { out.scriptTimeZone = Session.getScriptTimeZone(); } catch (err) { out.scriptTimeZone = 'ERROR: ' + String(err); }
