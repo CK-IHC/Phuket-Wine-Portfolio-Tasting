@@ -111,9 +111,6 @@ export function RegisterPage() {
       venueLabel: t('entryVenueLabel'),
       venueValue: selectedRound?.venue || '',
       footerNote: t('entryFooterNote'),
-      statusLineLabel: t('entryStatusLineLabel'),
-      statusLineValue: t('statPending'),
-      statusLineColor: '#7a5717',
     })
       .then((blob) => { if (!cancelled) setEntryCardUrl(URL.createObjectURL(blob)); })
       .catch(() => {});

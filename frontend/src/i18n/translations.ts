@@ -225,7 +225,6 @@ export const TR = {
   entryTimeLabel: { th: 'เวลา:', en: 'Time:' },
   entryVenueLabel: { th: 'สถานที่:', en: 'Venue:' },
   entryFooterNote: { th: 'กรุณาแสดงหน้าจอนี้พร้อมบัตรประชาชนหรือหนังสือเดินทางที่จุดลงทะเบียน', en: 'Please show this screen along with your ID or passport at the registration point' },
-  entryStatusLineLabel: { th: 'สถานะการชำระเงิน:', en: 'Payment Status:' },
   downloadEntryCardBtn: { th: 'ดาวน์โหลดบัตรเข้างาน', en: 'Download Entry Card' },
 } satisfies Record<string, Entry>;
 

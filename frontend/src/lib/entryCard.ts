@@ -15,9 +15,6 @@ export interface EntryCardOptions {
   venueLabel: string;
   venueValue: string;
   footerNote: string;
-  statusLineLabel: string;
-  statusLineValue: string;
-  statusLineColor: string;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -200,26 +197,11 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   });
 
   // Footer note (below panel)
-  let fy = panelY + panelH + 50;
+  const fy = panelY + panelH + 50;
   ctx.textAlign = 'center';
   ctx.fillStyle = '#4b5a63';
   ctx.font = '500 21px "TH Sarabun PSK", Sarabun, sans-serif';
-  fy = wrapText(ctx, opts.footerNote, W / 2, fy, W - pad * 3, 30);
-
-  // Payment status line
-  fy += 30;
-  ctx.font = '700 24px "TH Sarabun PSK", Sarabun, sans-serif';
-  ctx.fillStyle = '#20323f';
-  const labelText = opts.statusLineLabel + ' ';
-  const valueText = opts.statusLineValue;
-  const labelW = ctx.measureText(labelText).width;
-  const valueW = ctx.measureText(valueText).width;
-  const totalW = labelW + valueW;
-  const startX = W / 2 - totalW / 2;
-  ctx.textAlign = 'left';
-  ctx.fillText(labelText, startX, fy);
-  ctx.fillStyle = opts.statusLineColor;
-  ctx.fillText(valueText, startX + labelW, fy);
+  wrapText(ctx, opts.footerNote, W / 2, fy, W - pad * 3, 30);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
