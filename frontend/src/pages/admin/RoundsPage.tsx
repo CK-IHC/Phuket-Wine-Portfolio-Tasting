@@ -68,6 +68,7 @@ export function RoundsPage() {
   const { toast } = useToast();
   const [rounds, setRounds] = useState<EventRound[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -78,7 +79,7 @@ export function RoundsPage() {
   useEffect(() => {
     api.getRounds()
       .then((data) => { setRounds(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
   }, []);
 
   const toggleStatus = async (r: EventRound) => {
@@ -165,6 +166,11 @@ export function RoundsPage() {
         <h2 style={{ margin: 0 }}>{t('roundsTitle')}</h2>
         <Button variant="primary" onClick={openAdd}>{t('addRoundBtn')}</Button>
       </div>
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 14 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
       <div style={{ overflowX: 'auto' }}>
         <table className="table">
           <thead>

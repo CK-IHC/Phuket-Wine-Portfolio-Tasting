@@ -12,13 +12,14 @@ export function UsersPage() {
   const { toast } = useToast();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', phone: '', role: 'Staff' as AdminUser['role'] });
 
   useEffect(() => {
     api.getUsers()
       .then((data) => { setUsers(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
   }, []);
 
   const toggleActive = async (u: AdminUser) => {
@@ -49,6 +50,13 @@ export function UsersPage() {
         <h2 style={{ margin: 0 }}>{t('usersTitle')}</h2>
         <Button variant="primary" onClick={() => setAddOpen(true)}>{t('addUserBtn')}</Button>
       </div>
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 14 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
+      {!loadError && users.length === 0 && <p className="text-muted">{t('noRecords')}</p>}
+      {users.length > 0 && (
       <div style={{ overflowX: 'auto' }}>
         <table className="table">
           <thead>
@@ -79,6 +87,7 @@ export function UsersPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       {addOpen && (
         <Dialog

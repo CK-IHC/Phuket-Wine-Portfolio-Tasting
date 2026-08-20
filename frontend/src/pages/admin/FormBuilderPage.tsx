@@ -33,6 +33,7 @@ export function FormBuilderPage() {
   const { toast } = useToast();
   const [fields, setFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [previewAnswers, setPreviewAnswers] = useState<Record<string, string | string[] | undefined>>({});
@@ -40,7 +41,7 @@ export function FormBuilderPage() {
   useEffect(() => {
     api.getFormFields()
       .then((data) => { setFields(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
   }, []);
 
   const selected = fields.find((f) => f.id === selectedId) || null;
@@ -134,6 +135,12 @@ export function FormBuilderPage() {
           <Button variant="primary" onClick={publish}>{t('publishBtn')}</Button>
         </div>
       </div>
+
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 14 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
 
       {mode === 'preview' && (
         <div style={{ maxWidth: 520, display: 'flex', flexDirection: 'column', gap: 16 }}>

@@ -26,6 +26,7 @@ export function DashboardPage() {
   const [rounds, setRounds] = useState<EventRound[]>([]);
   const [roundFilter, setRoundFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [monthlyYear, setMonthlyYear] = useState('');
   const [granularity, setGranularity] = useState<Granularity>('day');
   const [dateFrom, setDateFrom] = useState(firstOfMonthISO());
@@ -39,7 +40,7 @@ export function DashboardPage() {
         setMonthlyYear(years[years.length - 1]);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
     api.getRounds().then(setRounds).catch(() => {});
   }, []);
 
@@ -91,6 +92,12 @@ export function DashboardPage() {
           </select>
         )}
       </div>
+
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 16 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12 }}>
         {statCards.map((sc) => (

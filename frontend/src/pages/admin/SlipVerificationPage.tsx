@@ -19,6 +19,7 @@ export function SlipVerificationPage() {
   const { printNow } = usePrint();
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [statusFilter, setStatusFilter] = useState<RegistrationStatus>('pending');
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
@@ -36,7 +37,7 @@ export function SlipVerificationPage() {
         // eye against the slip image rather than trusting a pre-filled value.
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
     api.getRounds().then(setRounds).catch(() => {});
   }, []);
 
@@ -161,7 +162,12 @@ export function SlipVerificationPage() {
         )}
       </div>
 
-      {byStatus.length === 0 && <p className="text-muted">{t('noRecords')}</p>}
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 14 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
+      {!loadError && byStatus.length === 0 && <p className="text-muted">{t('noRecords')}</p>}
       {byStatus.length > 0 && filtered.length === 0 && <p className="text-muted">{t('noSearchResults')}</p>}
       {filtered.length > 0 && (
         <div style={{ overflowX: 'auto' }}>

@@ -25,6 +25,7 @@ export function RegistrationListPage() {
   const [regs, setRegs] = useState<Registration[]>([]);
   const [rounds, setRounds] = useState<EventRound[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [roundFilter, setRoundFilter] = useState('all');
@@ -40,7 +41,7 @@ export function RegistrationListPage() {
 
   const load = () => api.getRegistrations()
     .then((data) => { setRegs(data); setLoading(false); })
-    .catch(() => setLoading(false));
+    .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
   useEffect(() => {
     load();
     api.getRounds().then(setRounds).catch(() => {});
@@ -189,6 +190,12 @@ export function RegistrationListPage() {
         </div>
       </div>
 
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 14 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
+      {!loadError && regs.length === 0 && <p className="text-muted">{t('noRecords')}</p>}
       {regs.length > 0 && filtered.length === 0 && <p className="text-muted">{t('noSearchResults')}</p>}
       {filtered.length > 0 && (
         <div style={{ overflowX: 'auto' }}>

@@ -29,6 +29,7 @@ export function FormResponsesPage() {
   const [rounds, setRounds] = useState<EventRound[]>([]);
   const [fields, setFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingReg, setEditingReg] = useState<Registration | null>(null);
   const [search, setSearch] = useState('');
@@ -40,7 +41,7 @@ export function FormResponsesPage() {
   useEffect(() => {
     Promise.all([api.getRegistrations(), api.getFormFields()])
       .then(([regData, fieldData]) => { setRegs(regData); setFields(fieldData); setLoading(false); })
-      .catch(() => setLoading(false));
+      .catch((err) => { setLoadError(err instanceof Error ? err.message : String(err)); setLoading(false); });
     api.getRounds().then(setRounds).catch(() => {});
   }, []);
 
@@ -188,6 +189,12 @@ export function FormResponsesPage() {
         </div>
       </div>
 
+      {loadError && (
+        <div style={{ color: 'var(--color-accent-900)', background: 'var(--color-accent-100)', border: '1px solid var(--color-accent-300)', padding: '10px 12px', borderRadius: 'var(--radius-md)', fontSize: 13, marginBottom: 14 }}>
+          {t('loadErrorMessage')} ({loadError})
+        </div>
+      )}
+      {!loadError && regs.length === 0 && <p className="text-muted">{t('noRecords')}</p>}
       {regs.length > 0 && filtered.length === 0 && <p className="text-muted">{t('noSearchResults')}</p>}
       {filtered.length > 0 && (
         <div style={{ overflowX: 'auto' }}>
