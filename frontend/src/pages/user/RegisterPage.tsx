@@ -110,6 +110,7 @@ export function RegisterPage() {
       timeValue: selectedRound ? `${selectedRound.startTime}${selectedRound.endTime ? '–' + selectedRound.endTime : ''}` : '',
       venueLabel: t('entryVenueLabel'),
       venueValue: selectedRound?.venue || '',
+      footerNote: t('entryDownloadNote'),
     })
       .then((blob) => { if (!cancelled) setEntryCardUrl(URL.createObjectURL(blob)); })
       .catch(() => {});

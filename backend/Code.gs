@@ -7,7 +7,7 @@
 const SHEET_ID = '1vPqZka3cCGXR_hYUlAn4WfbowvNG6Pvv1_VTdRnM1so';
 const FOLDER_ID = '1RPuhIU7rkGbhEHI8b4bewn8yH7YjQC8X';
 
-const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName','AnswersJson'];
+const REG_HEADERS = ['Timestamp','RefNo','Name','Phone','Email','Area','Arrival','Source','Wines','Prices','SlipUrl','Amount','Status','RejectReason','RoundId','RoundName'];
 // No password column — admin/staff sign in with phone number only (matched against Active users).
 const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
 // One row per question — Options stays as compact JSON since a question can
@@ -213,16 +213,17 @@ function doPost(e) {
 
 // ───────────────────────── Registrations ─────────────────────────
 //
-// Every dynamic form question gets its own readable column on the
-// Registrations sheet (self-healed in, same pattern as ROUND_HEADERS)
-// instead of being buried in the AnswersJson blob — except the handful of
-// original fixed questions (f1,f2,f3,f5,f6,f7,f8,f9) that already have
-// named columns of their own (Email/Name/Phone/Area/Arrival/Source/Wines/
-// Prices), so those aren't duplicated. AnswersJson is still written on
-// every submit as a redundant safety net, and stays the fallback source on
-// read for any answer whose question predates its own column.
+// Every form question is backed by a real, readable column on the
+// Registrations sheet — never a JSON blob. The original fixed questions
+// (f1,f2,f3,f5,f6,f7,f8,f9) reuse their existing named columns (Email/Name/
+// Phone/Area/Arrival/Source/Wines/Prices, needed as-is by every other admin
+// page); every other question — including any custom one added later —
+// gets its own self-healed "Q: <label>" column, same pattern as
+// ROUND_HEADERS. The API response still hands the frontend an `answers`
+// map (reconstructed fresh from those columns on every read) since that's
+// the existing contract, but nothing JSON-shaped is ever stored in a cell.
 
-const LEGACY_MAPPED_FIELD_IDS = ['f1', 'f2', 'f3', 'f5', 'f6', 'f7', 'f8', 'f9'];
+const LEGACY_FIELD_COLUMN = { f1: 'Email', f2: 'Name', f3: 'Phone', f5: 'Area', f6: 'Arrival', f7: 'Source', f8: 'Wines', f9: 'Prices' };
 
 /** One entry per current question that needs its own Registrations column:
  * every non-QR field except the legacy ones already covered by a named
@@ -232,7 +233,7 @@ const LEGACY_MAPPED_FIELD_IDS = ['f1', 'f2', 'f3', 'f5', 'f6', 'f7', 'f8', 'f9']
 function answerColumns_(fields) {
   const seen = {};
   return fields
-    .filter((f) => f.type !== 'qr' && LEGACY_MAPPED_FIELD_IDS.indexOf(f.id) === -1)
+    .filter((f) => f.type !== 'qr' && !LEGACY_FIELD_COLUMN[f.id])
     .map((f) => {
       const label = (f.label || f.id || '').toString().trim() || f.id;
       let header = 'Q: ' + label;
@@ -241,13 +242,32 @@ function answerColumns_(fields) {
     });
 }
 
+/** The Registrations sheet used to carry one AnswersJson blob column;
+ * answers now live entirely in plain columns (see answerColumns_ above), so
+ * on an already-deployed sheet that column is dead JSON left behind by the
+ * old format — drop it once so the sheet stays JSON-free going forward. */
+function migrateRegistrationsSheet_() {
+  const ss = getSS();
+  const sh = ss.getSheetByName('Registrations');
+  if (!sh) return;
+  const lastCol = sh.getLastColumn();
+  if (lastCol === 0) return;
+  const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  const idx = headers.indexOf('AnswersJson');
+  if (idx !== -1) sh.deleteColumn(idx + 1);
+}
+
 function readRegistrations() {
+  migrateRegistrationsSheet_();
   const dynCols = answerColumns_(readFormFields());
   const headers = REG_HEADERS.concat(dynCols.map((c) => c.header));
   const rows = sheetToObjects(getSheet('Registrations', headers));
   rows.forEach((r) => {
-    let answers = {};
-    if (r.AnswersJson) { try { answers = JSON.parse(r.AnswersJson) || {}; } catch (e) { answers = {}; } }
+    const answers = {};
+    Object.keys(LEGACY_FIELD_COLUMN).forEach((fieldId) => {
+      const v = r[LEGACY_FIELD_COLUMN[fieldId]];
+      if (v !== undefined && v !== '') answers[fieldId] = v;
+    });
     dynCols.forEach((c) => {
       const v = r[c.header];
       if (v !== undefined && v !== '') answers[c.id] = v;
@@ -302,6 +322,7 @@ function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
 }
 
 function submitRegistration(p) {
+  migrateRegistrationsSheet_();
   const dynCols = answerColumns_(readFormFields());
   const sh = getSheet('Registrations', REG_HEADERS.concat(dynCols.map((c) => c.header)));
   const refNo = nextRefNo();
@@ -313,7 +334,7 @@ function submitRegistration(p) {
     Area: p.area || '', Arrival: p.arrival || '', Source: p.source || '',
     Wines: (p.wines || []).join(', '), Prices: (p.prices || []).join(', '),
     SlipUrl: slipUrl, Amount: p.amount || 0, Status: 'pending', RejectReason: '',
-    RoundId: p.roundId || '', RoundName: p.roundName || '', AnswersJson: JSON.stringify(answers),
+    RoundId: p.roundId || '', RoundName: p.roundName || '',
   };
   dynCols.forEach((c) => {
     const v = answers[c.id];

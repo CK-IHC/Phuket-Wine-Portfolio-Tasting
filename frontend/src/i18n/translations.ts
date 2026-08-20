@@ -225,6 +225,7 @@ export const TR = {
   entryTimeLabel: { th: 'เวลา:', en: 'Time:' },
   entryVenueLabel: { th: 'สถานที่:', en: 'Venue:' },
   downloadEntryCardBtn: { th: 'ดาวน์โหลดบัตรเข้างาน', en: 'Download Entry Card' },
+  entryDownloadNote: { th: 'กรุณาดาวน์โหลดหลักฐานการลงทะเบียนนี้ไว้ เพื่อแสดงต่อเจ้าหน้าที่ก่อนเข้าบริเวณงาน', en: 'Please download this registration proof to show staff before entering the event area' },
 } satisfies Record<string, Entry>;
 
 export type TrKey = keyof typeof TR;

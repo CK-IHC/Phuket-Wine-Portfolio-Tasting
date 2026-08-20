@@ -14,6 +14,7 @@ export interface EntryCardOptions {
   timeValue: string;
   venueLabel: string;
   venueValue: string;
+  footerNote: string;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -133,7 +134,7 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   const panelY = cursorY + 40;
   const panelW = W - (pad + 24) * 2;
   const qrSize = 220;
-  const panelH = 560;
+  const panelH = 500;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(29,31,32,0.12)';
   ctx.shadowBlur = 24;
@@ -202,6 +203,13 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
     ctx.fillStyle = '#3a4147';
     ctx.fillText(value, panelX + innerPad + 38 + labelW + 10, iy);
   });
+
+  // Footer note (below panel)
+  const fy = panelY + panelH + 50;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#4b5a63';
+  ctx.font = '500 21px "TH Sarabun PSK", Sarabun, sans-serif';
+  wrapText(ctx, opts.footerNote, W / 2, fy, W - pad * 3, 30);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
