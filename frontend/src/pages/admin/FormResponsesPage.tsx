@@ -96,7 +96,7 @@ export function FormResponsesPage() {
       rows: rows.map((r) => ({
         refNo: r.refNo, round: r.roundName || '-',
         ...Object.fromEntries(questionFields.map((f) => [f.id, answerText(r, f)])),
-        amount: `฿${r.amount.toLocaleString()}`,
+        amount: r.amount ? `฿${r.amount.toLocaleString()}` : '',
         status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
       })),
     });
@@ -110,7 +110,7 @@ export function FormResponsesPage() {
         timestamp: formatSubmitted(r.submittedAt, lang), refNo: r.refNo, name: r.name, phone: r.phone,
         email: r.email, area: r.area, arrival: r.arrival, source: r.source,
         wines: r.wines.join(', '), prices: r.prices.join(', '), slipUrl: r.slipUrl,
-        amount: r.amount, status: r.status, rejectReason: r.rejectReason || '',
+        amount: r.amount || '', status: r.status, rejectReason: r.rejectReason || '',
         roundId: r.roundId, roundName: r.roundName,
       })),
       [
@@ -208,7 +208,7 @@ export function FormResponsesPage() {
                   <td>{r.refNo}</td>
                   <td>{r.roundName || '-'}</td>
                   {questionFields.map((f) => <td key={f.id}>{answerText(r, f)}</td>)}
-                  <td>฿{r.amount.toLocaleString()}</td>
+                  <td>{r.amount ? `฿${r.amount.toLocaleString()}` : '—'}</td>
                   <td><StatusTag status={r.status} /></td>
                   <td style={{ display: 'flex', gap: 4 }}>
                     <button className="btn btn-ghost" onClick={() => setEditingReg(r)}>{t('editRowBtn')}</button>

@@ -148,7 +148,7 @@ export function RegisterPage() {
         source: get('f7'),
         wines: getArr('f8'),
         prices: getArr('f9'),
-        amount: 1500,
+        amount: 0,
         roundId: selectedRound?.id || '',
         roundName: selectedRound?.name || '',
         answers: Object.fromEntries(Object.entries(answers).filter(([, v]) => v !== undefined)) as Record<string, string | string[]>,

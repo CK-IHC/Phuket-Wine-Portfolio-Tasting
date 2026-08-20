@@ -107,7 +107,7 @@ export function RegistrationListPage() {
       ],
       rows: rows.map((r) => ({
         refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '-',
-        amount: `฿${r.amount.toLocaleString()}`,
+        amount: r.amount ? `฿${r.amount.toLocaleString()}` : '',
         status: t(r.status === 'approved' ? 'statApproved' : r.status === 'rejected' ? 'statRejected' : 'statPending'),
       })),
     });
@@ -119,7 +119,7 @@ export function RegistrationListPage() {
       rows.map((r) => ({
         refNo: r.refNo, name: r.name, phone: r.phone, round: r.roundName || '', email: r.email, area: r.area,
         arrival: r.arrival, source: r.source, wines: r.wines.join(', '), prices: r.prices.join(', '),
-        amount: r.amount, status: r.status,
+        amount: r.amount || '', status: r.status,
       })),
       [
         { key: 'refNo', label: t('colRef') }, { key: 'name', label: t('colName') },
@@ -209,7 +209,7 @@ export function RegistrationListPage() {
                   <td>{r.name}</td>
                   <td>{r.phone}</td>
                   <td>{r.roundName || '-'}</td>
-                  <td>฿{r.amount.toLocaleString()}</td>
+                  <td>{r.amount ? `฿${r.amount.toLocaleString()}` : '—'}</td>
                   <td><StatusTag status={r.status} /></td>
                   <td><button className="btn btn-ghost" onClick={() => setSlipReg(r)}>{t('viewSlipBtn')}</button></td>
                   <td><button className="btn btn-ghost" onClick={() => setDetailReg(r)}>{t('viewDetailBtn')}</button></td>
