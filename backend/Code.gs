@@ -62,6 +62,40 @@ function appendRowByHeaders_(sh, valuesByHeader) {
   sh.appendRow(headers.map((h) => (h in valuesByHeader ? valuesByHeader[h] : '')));
 }
 
+/** Sheets auto-detects any numeric-looking string — a phone number like
+ * "0812345678" included — and silently stores it as a real Number, which
+ * drops the leading "0" every Thai mobile number starts with (becomes
+ * 812345678). That's not just cosmetic: phone-based login and search both
+ * compare against the string the user actually typed, leading zero
+ * included, so a corrupted cell just stops matching. Force the column to
+ * Plain Text formatting so future writes keep the leading zero, and repair
+ * any cell that's already been silently coerced to a number (a 9-digit
+ * number where a 10-digit Thai mobile number should be = a lost leading
+ * zero). Safe to call repeatedly — a no-op once every cell is already text. */
+function fixPhoneColumn_(sh, header) {
+  const lastCol = sh.getLastColumn();
+  if (lastCol === 0) return;
+  const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  const idx = headers.indexOf(header);
+  if (idx === -1) return;
+  const col = idx + 1;
+  sh.getRange(1, col, sh.getMaxRows(), 1).setNumberFormat('@');
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return;
+  const range = sh.getRange(2, col, lastRow - 1, 1);
+  const values = range.getValues();
+  let changed = false;
+  const fixed = values.map(([v]) => {
+    if (typeof v === 'number') {
+      changed = true;
+      const digits = String(v);
+      return [digits.length === 9 ? '0' + digits : digits];
+    }
+    return [v];
+  });
+  if (changed) range.setValues(fixed);
+}
+
 /** Sheets auto-detects date/time-shaped text (the "2026-09-20" Date column,
  * "18:00" StartTime/EndTime) and silently stores it as a real Date value —
  * even though it was written as a plain string via appendRow/setValue. Left
@@ -255,6 +289,7 @@ function migrateRegistrationsSheet_() {
   const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
   const idx = headers.indexOf('AnswersJson');
   if (idx !== -1) sh.deleteColumn(idx + 1);
+  fixPhoneColumn_(sh, 'Phone');
 }
 
 function readRegistrations() {
@@ -398,7 +433,9 @@ function computeStats() {
 // Users sheet. There is no separate password field.
 
 function readUsers() {
-  return sheetToObjects(getSheet('Users', USER_HEADERS));
+  const sh = getSheet('Users', USER_HEADERS);
+  fixPhoneColumn_(sh, 'Phone');
+  return sheetToObjects(sh);
 }
 
 function login(p) {
@@ -410,6 +447,7 @@ function login(p) {
 
 function addUser(p) {
   const sh = getSheet('Users', USER_HEADERS);
+  fixPhoneColumn_(sh, 'Phone');
   sh.appendRow([p.name || '', p.phone || '', p.role || 'Staff', true, new Date()]);
   return { ok: true };
 }
