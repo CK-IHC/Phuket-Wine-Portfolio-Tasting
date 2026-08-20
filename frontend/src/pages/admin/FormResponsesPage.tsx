@@ -104,25 +104,25 @@ export function FormResponsesPage() {
   };
 
   // Full dump matching every column on the backend's Registrations sheet.
+  // Question columns use each field's own configured label verbatim (not a
+  // translated generic column name) so the export header matches exactly
+  // what the admin set up in the Form Builder.
   const exportExcel = () => {
     const rows = selectedIds.size ? regs.filter((r) => selectedIds.has(r.id)) : filtered;
     exportRowsToExcel(
       rows.map((r) => ({
-        timestamp: formatSubmitted(r.submittedAt, lang), refNo: r.refNo, name: r.name, phone: r.phone,
-        email: r.email, area: r.area, arrival: r.arrival, source: r.source,
-        wines: r.wines.join(', '), prices: r.prices.join(', '), slipUrl: r.slipUrl,
-        amount: r.amount || '', status: r.status, rejectReason: r.rejectReason || '',
-        roundId: r.roundId, roundName: r.roundName,
+        timestamp: formatSubmitted(r.submittedAt, lang), refNo: r.refNo, round: r.roundName || '',
+        ...Object.fromEntries(questionFields.map((f) => [f.id, answerText(r, f)])),
+        slipUrl: r.slipUrl, amount: r.amount || '', status: r.status,
+        rejectReason: r.rejectReason || '', roundId: r.roundId,
       })),
       [
         { key: 'timestamp', label: 'Timestamp' }, { key: 'refNo', label: t('colRef') },
-        { key: 'name', label: t('colName') }, { key: 'phone', label: t('colPhone') },
-        { key: 'email', label: t('colEmail') }, { key: 'area', label: t('colArea') },
-        { key: 'arrival', label: t('colArrival') }, { key: 'source', label: t('colSource') },
-        { key: 'wines', label: t('colWines') }, { key: 'prices', label: t('colPrices') },
+        { key: 'round', label: t('colRound') },
+        ...questionFields.map((f) => ({ key: f.id, label: f.label })),
         { key: 'slipUrl', label: 'Slip URL' }, { key: 'amount', label: t('colAmountTransferred') },
         { key: 'status', label: t('colStatus') }, { key: 'rejectReason', label: 'Reject Reason' },
-        { key: 'roundId', label: 'Round ID' }, { key: 'roundName', label: t('colRound') },
+        { key: 'roundId', label: 'Round ID' },
       ],
       'registrations-full.xlsx'
     );

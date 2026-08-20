@@ -128,7 +128,11 @@ function fixPhoneColumn_(sh, header) {
  * parsing (date.split('-'), etc.) looking at mangled text. Convert any Date
  * cell back to a plain local-timezone string before it ever reaches JSON. */
 function formatSheetDate_(v, header, tz) {
-  if (/time$/i.test(header)) return Utilities.formatDate(v, tz, 'HH:mm');
+  // "Arrival" (expected arrival time) doesn't end in "Time" like
+  // StartTime/EndTime do, so it fell through to the full-timestamp branch
+  // below and leaked a full ISO datetime into the UI/export instead of a
+  // clean HH:mm.
+  if (/time$/i.test(header) || header === 'Arrival') return Utilities.formatDate(v, tz, 'HH:mm');
   if (/date$/i.test(header)) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
   return Utilities.formatDate(v, tz, "yyyy-MM-dd'T'HH:mm:ss");
 }
@@ -230,7 +234,7 @@ function friendlyError_(err) {
 // Bumped whenever diag() itself changes — the fastest way to tell whether
 // a "Deploy → New version" actually took effect: if this string isn't the
 // one you just added, the web app is still serving old code, full stop.
-const CODE_VERSION = 'phone-write-time-fix-4';
+const CODE_VERSION = 'arrival-time-format-fix-5';
 
 function diag() {
   const out = { ok: true, codeVersion: CODE_VERSION };
