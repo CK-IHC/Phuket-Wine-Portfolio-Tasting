@@ -96,7 +96,7 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   if (!ctx) throw new Error('canvas not supported');
   ctx.scale(SCALE, SCALE);
 
-  ctx.fillStyle = '#eceef2';
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
   drawVine(ctx, W - 210, 30, 1);
@@ -136,7 +136,7 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   const qrSize = 220;
   const panelH = 500;
   ctx.fillStyle = '#ffffff';
-  ctx.shadowColor = 'rgba(29,31,32,0.12)';
+  ctx.shadowColor = 'rgba(29,31,32,0.16)';
   ctx.shadowBlur = 24;
   ctx.shadowOffsetY = 8;
   roundRect(ctx, panelX, panelY, panelW, panelH, 20);
@@ -144,6 +144,10 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = '#e2e4e6';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, panelX, panelY, panelW, panelH, 20);
+  ctx.stroke();
 
   const innerPad = 44;
   let ty = panelY + 60;
@@ -152,9 +156,9 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   ctx.font = '500 24px "TH Sarabun PSK", Sarabun, sans-serif';
   ctx.fillText(opts.refNoLabel, panelX + innerPad, ty);
 
-  ty += 54;
+  ty += 48;
   ctx.fillStyle = '#1d1f20';
-  ctx.font = '800 56px "TH Sarabun PSK", Sarabun, sans-serif';
+  ctx.font = '800 44px "TH Sarabun PSK", Sarabun, sans-serif';
   ctx.fillText(opts.refNo, panelX + innerPad, ty);
 
   ty += 50;
@@ -205,11 +209,11 @@ export async function buildEntryCardBlob(opts: EntryCardOptions): Promise<Blob> 
   });
 
   // Footer note (below panel)
-  const fy = panelY + panelH + 50;
+  const fy = panelY + panelH + 54;
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#4b5a63';
-  ctx.font = '500 21px "TH Sarabun PSK", Sarabun, sans-serif';
-  wrapText(ctx, opts.footerNote, W / 2, fy, W - pad * 3, 30);
+  ctx.fillStyle = '#20323f';
+  ctx.font = '700 26px "TH Sarabun PSK", Sarabun, sans-serif';
+  wrapText(ctx, opts.footerNote, W / 2, fy, W - pad * 3, 36);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');

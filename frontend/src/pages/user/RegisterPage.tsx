@@ -112,10 +112,16 @@ export function RegisterPage() {
       venueValue: selectedRound?.venue || '',
       footerNote: t('entryDownloadNote'),
     })
-      .then((blob) => { if (!cancelled) setEntryCardUrl(URL.createObjectURL(blob)); })
+      .then((blob) => {
+        if (cancelled) return;
+        setEntryCardUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
+      })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [refNo]);
+  }, [refNo, lang]);
 
   const submit = async () => {
     if (openRounds.length > 1 && !selectedRound) {
