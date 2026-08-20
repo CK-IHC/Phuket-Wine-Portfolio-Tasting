@@ -93,12 +93,8 @@ function fixPhoneColumn_(sh, header) {
   const values = range.getValues();
   let changed = false;
   const fixed = values.map(([v]) => {
-    if (typeof v === 'number') {
-      changed = true;
-      const digits = String(v);
-      return [digits.length === 9 ? '0' + digits : digits];
-    }
-    return [v];
+    if (typeof v === 'number') { changed = true; }
+    return [fixPhoneValue_(v)];
   });
   if (changed) {
     try {
@@ -121,6 +117,20 @@ function formatSheetDate_(v, header, tz) {
   return Utilities.formatDate(v, tz, "yyyy-MM-dd'T'HH:mm:ss");
 }
 
+/** A Phone cell that got auto-coerced to a Number (dropping the leading
+ * "0" every Thai mobile number starts with) reads back as a 9-digit
+ * number where a 10-digit number should be. Restore it on every read —
+ * regardless of whether the sheet's own formatting was ever successfully
+ * fixed at rest (some sheets are Google Sheets "Tables", which reject
+ * setNumberFormat() entirely via the Apps Script API, so trying to fix
+ * the cell itself isn't reliable) — so login and search always compare
+ * against the number the user actually typed. */
+function fixPhoneValue_(v) {
+  if (typeof v !== 'number') return v;
+  const digits = String(v);
+  return digits.length === 9 ? '0' + digits : digits;
+}
+
 function sheetToObjects(sh) {
   const tz = Session.getScriptTimeZone();
   const rng = sh.getDataRange().getValues();
@@ -131,6 +141,7 @@ function sheetToObjects(sh) {
     headers.forEach((h, idx) => {
       let v = row[idx];
       if (v instanceof Date) v = formatSheetDate_(v, h, tz);
+      if (h === 'Phone') v = fixPhoneValue_(v);
       obj[h] = v;
     });
     return obj;
@@ -482,7 +493,7 @@ function updateUser(p) {
   const sh = getSheet('Users', USER_HEADERS);
   const data = sh.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]) === String(p.phone)) {
+    if (String(fixPhoneValue_(data[i][1])) === String(p.phone)) {
       if (p.name !== undefined) sh.getRange(i + 1, 1).setValue(p.name);
       if (p.role !== undefined) sh.getRange(i + 1, 3).setValue(p.role);
       if (p.active !== undefined) sh.getRange(i + 1, 4).setValue(p.active);
@@ -496,7 +507,7 @@ function deleteUser(phone) {
   const sh = getSheet('Users', USER_HEADERS);
   const data = sh.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]) === String(phone)) { sh.deleteRow(i + 1); return { ok: true }; }
+    if (String(fixPhoneValue_(data[i][1])) === String(phone)) { sh.deleteRow(i + 1); return { ok: true }; }
   }
   return { ok: false, error: 'not found' };
 }
