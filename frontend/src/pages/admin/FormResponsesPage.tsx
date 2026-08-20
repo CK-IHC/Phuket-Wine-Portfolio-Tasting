@@ -5,6 +5,7 @@ import { usePrint } from '../../context/PrintContext';
 import { api } from '../../lib/api';
 import type { EventRound, FormField, Registration, RegistrationStatus } from '../../lib/types';
 import { formatSubmitted, parseTimestamp } from '../../lib/format';
+import { matchesQuery } from '../../lib/search';
 import { exportRowsToExcel } from '../../lib/exportExcel';
 import { Button } from '../../components/ui/Button';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
@@ -47,13 +48,12 @@ export function FormResponsesPage() {
   const questionFields = useMemo(() => fields.filter((f) => f.type !== 'qr'), [fields]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
     const fromD = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
     const toD = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
     return regs.filter((r) => {
       if (statusFilter !== 'all' && r.status !== statusFilter) return false;
       if (roundFilter !== 'all' && r.roundId !== roundFilter) return false;
-      if (q && !(r.name.toLowerCase().includes(q) || r.phone.includes(q) || r.refNo.toLowerCase().includes(q))) return false;
+      if (!matchesQuery(search, r.name, r.phone, r.refNo)) return false;
       if (fromD || toD) {
         const d = parseTimestamp(r.submittedAt);
         if (!d) return false;

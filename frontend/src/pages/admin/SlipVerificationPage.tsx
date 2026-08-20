@@ -5,6 +5,7 @@ import { usePrint } from '../../context/PrintContext';
 import { api } from '../../lib/api';
 import type { EventRound, Registration, RegistrationStatus } from '../../lib/types';
 import { formatSubmitted } from '../../lib/format';
+import { matchesQuery } from '../../lib/search';
 import { exportRowsToExcel } from '../../lib/exportExcel';
 import { Button } from '../../components/ui/Button';
 import { SegmentedControl } from '../../components/ui/SegmentedControl';
@@ -40,10 +41,9 @@ export function SlipVerificationPage() {
   }, []);
 
   const byStatus = regs.filter((r) => r.status === statusFilter);
-  const q = search.trim().toLowerCase();
   const filtered = byStatus.filter((r) =>
     (roundFilter === 'all' || r.roundId === roundFilter) &&
-    (!q || r.name.toLowerCase().includes(q) || r.phone.includes(q) || r.refNo.toLowerCase().includes(q))
+    matchesQuery(search, r.name, r.phone, r.refNo)
   );
 
   const saveAmount = async (r: Registration) => {
