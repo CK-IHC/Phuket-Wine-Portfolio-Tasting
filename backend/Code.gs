@@ -62,6 +62,22 @@ function appendRowByHeaders_(sh, valuesByHeader) {
   sh.appendRow(headers.map((h) => (h in valuesByHeader ? valuesByHeader[h] : '')));
 }
 
+/** The actual moment phone numbers get corrupted: appendRow()/setValue()
+ * auto-parse a numeric-looking string into a real Number the instant it
+ * lands in a General-formatted cell — dropping the leading "0" — even
+ * though the value was a proper string on the way in. Changing the
+ * column's format/type *after* that already happened does nothing, since
+ * the digit is already gone from the stored value by then. The only
+ * reliable fix is to force the target cell to Plain Text *before* writing
+ * the value, every single time a phone number is written. Best-effort on
+ * the format call — a Table-governed column can still reject it outright —
+ * but the read-time repair in sheetToObjects()/fixPhoneValue_() remains
+ * the safety net if it does. */
+function writePhoneCell_(sh, row, col, phone) {
+  try { sh.getRange(row, col).setNumberFormat('@'); } catch (err) { /* best-effort */ }
+  sh.getRange(row, col).setValue(String(phone || ''));
+}
+
 /** Sheets auto-detects any numeric-looking string — a phone number like
  * "0812345678" included — and silently stores it as a real Number, which
  * drops the leading "0" every Thai mobile number starts with (becomes
@@ -214,7 +230,7 @@ function friendlyError_(err) {
 // Bumped whenever diag() itself changes — the fastest way to tell whether
 // a "Deploy → New version" actually took effect: if this string isn't the
 // one you just added, the web app is still serving old code, full stop.
-const CODE_VERSION = 'phone-column-repair-endpoint-3';
+const CODE_VERSION = 'phone-write-time-fix-4';
 
 function diag() {
   const out = { ok: true, codeVersion: CODE_VERSION };
@@ -444,7 +460,11 @@ function submitRegistration(p) {
   if (p.slipBase64) slipUrl = saveBase64ToDrive(p.slipBase64, refNo + '_' + (p.fileName || 'slip.jpg'), p.mimeType || 'image/jpeg');
   const answers = p.answers || {};
   const values = {
-    Timestamp: new Date(), RefNo: refNo, Name: p.name || '', Phone: p.phone || '', Email: p.email || '',
+    // Phone is intentionally left blank here and written separately below —
+    // appendRow() writes into a General-formatted cell, which auto-parses
+    // a numeric-looking string into a real Number before we ever get a
+    // chance to force the cell to Plain Text. See writePhoneCell_().
+    Timestamp: new Date(), RefNo: refNo, Name: p.name || '', Phone: '', Email: p.email || '',
     Area: p.area || '', Arrival: p.arrival || '', Source: p.source || '',
     Wines: (p.wines || []).join(', '), Prices: (p.prices || []).join(', '),
     SlipUrl: slipUrl, Amount: p.amount || 0, Status: 'pending', RejectReason: '',
@@ -456,6 +476,8 @@ function submitRegistration(p) {
     values[c.header] = Array.isArray(v) ? v.join(', ') : v;
   });
   appendRowByHeaders_(sh, values);
+  const phoneCol = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].indexOf('Phone') + 1;
+  if (phoneCol > 0) writePhoneCell_(sh, sh.getLastRow(), phoneCol, p.phone);
   return { ok: true, refNo };
 }
 
@@ -483,7 +505,8 @@ function editRegistration(p) {
     const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
     if (p[lowerKey] !== undefined) {
       const col = found.headers.indexOf(key) + 1;
-      found.sh.getRange(found.rowIndex, col).setValue(p[lowerKey]);
+      if (key === 'Phone') writePhoneCell_(found.sh, found.rowIndex, col, p[lowerKey]);
+      else found.sh.getRange(found.rowIndex, col).setValue(p[lowerKey]);
     }
   });
   return { ok: true };
@@ -527,7 +550,9 @@ function login(p) {
 function addUser(p) {
   const sh = getSheet('Users', USER_HEADERS);
   fixPhoneColumn_(sh, 'Phone');
-  sh.appendRow([p.name || '', p.phone || '', p.role || 'Staff', true, new Date()]);
+  // Phone left blank in the append and written separately — see writePhoneCell_().
+  sh.appendRow([p.name || '', '', p.role || 'Staff', true, new Date()]);
+  writePhoneCell_(sh, sh.getLastRow(), 2, p.phone);
   return { ok: true };
 }
 
