@@ -79,7 +79,14 @@ function fixPhoneColumn_(sh, header) {
   const idx = headers.indexOf(header);
   if (idx === -1) return;
   const col = idx + 1;
-  sh.getRange(1, col, sh.getMaxRows(), 1).setNumberFormat('@');
+  // Some sheets refuse a bulk number-format change on a column (merged
+  // cells, a protected range, etc.) — that's real on at least one deployed
+  // sheet in the wild, and letting it throw here would take down every
+  // page that reads this sheet, not just phone formatting. Best-effort
+  // only: skip formatting rather than crash the caller.
+  try {
+    sh.getRange(1, col, sh.getMaxRows(), 1).setNumberFormat('@');
+  } catch (err) { /* not fatal — the repair pass below is what matters */ }
   const lastRow = sh.getLastRow();
   if (lastRow < 2) return;
   const range = sh.getRange(2, col, lastRow - 1, 1);
@@ -93,7 +100,11 @@ function fixPhoneColumn_(sh, header) {
     }
     return [v];
   });
-  if (changed) range.setValues(fixed);
+  if (changed) {
+    try {
+      range.setValues(fixed);
+    } catch (err) { /* same reasoning — never let this crash the caller */ }
+  }
 }
 
 /** Sheets auto-detects date/time-shaped text (the "2026-09-20" Date column,
@@ -288,7 +299,11 @@ function migrateRegistrationsSheet_() {
   if (lastCol === 0) return;
   const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0];
   const idx = headers.indexOf('AnswersJson');
-  if (idx !== -1) sh.deleteColumn(idx + 1);
+  if (idx !== -1) {
+    try {
+      sh.deleteColumn(idx + 1);
+    } catch (err) { /* e.g. merged cells blocking the edit — not fatal, skip it */ }
+  }
   fixPhoneColumn_(sh, 'Phone');
 }
 
