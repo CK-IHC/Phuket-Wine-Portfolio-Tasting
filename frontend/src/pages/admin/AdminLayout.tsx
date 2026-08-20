@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { LangToggle } from '../../components/ui/LangToggle';
 import { Button } from '../../components/ui/Button';
+import { api } from '../../lib/api';
+import { primaryEventTitle } from '../../lib/roundTitle';
+import type { EventRound } from '../../lib/types';
 import type { TrKey } from '../../i18n/translations';
 
 const TABS: { path: string; labelKey: TrKey }[] = [
@@ -19,11 +23,16 @@ export function AdminLayout() {
   const { t } = useLanguage();
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [rounds, setRounds] = useState<EventRound[]>([]);
+
+  useEffect(() => {
+    api.getRounds().then(setRounds).catch(() => {});
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
       <nav className="nav" style={{ borderBottom: '1px solid var(--color-divider)' }}>
-        <span className="nav-brand">{t('adminBrand')}</span>
+        <span className="nav-brand">{primaryEventTitle(rounds)}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <LangToggle />
           <Button variant="secondary" onClick={() => navigate('/')}>{t('userViewBtn')}</Button>

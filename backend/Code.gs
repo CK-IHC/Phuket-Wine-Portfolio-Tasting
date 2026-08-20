@@ -17,7 +17,7 @@ const USER_HEADERS = ['Name','Phone','Role','Active','Joined'];
 const FORM_HEADERS = ['Id', 'Type', 'Label', 'Required', 'Placeholder', 'MaxSelect', 'OptionsJson', 'QrUrl', 'QrCaption'];
 // A round is both the registerable session and its Home-page announcement —
 // creating one creates the other (see the Rounds section below).
-const ROUND_HEADERS = ['Id','Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','ImageUrls','BannerAspect','Published'];
+const ROUND_HEADERS = ['Id','Name','Title','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','ImageUrls','BannerAspect','Published'];
 
 function getSS() { return SpreadsheetApp.openById(SHEET_ID); }
 
@@ -48,6 +48,18 @@ function getSheet(name, headers) {
 
 function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/** Builds a row aligned to the sheet's actual current header order (post
+ * self-heal) instead of a hardcoded positional array — self-healed columns
+ * only ever get appended at the end, never inserted where a hand-written
+ * literal would expect them, so a positional literal silently drifts out of
+ * sync with real column order the moment a new header gets appended ahead
+ * of where the deploy-time constant lists it. Any header not present in
+ * valuesByHeader is left blank. */
+function appendRowByHeaders_(sh, valuesByHeader) {
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  sh.appendRow(headers.map((h) => (h in valuesByHeader ? valuesByHeader[h] : '')));
 }
 
 /** Sheets auto-detects date/time-shaped text (the "2026-09-20" Date column,
@@ -200,9 +212,49 @@ function doPost(e) {
 }
 
 // ───────────────────────── Registrations ─────────────────────────
+//
+// Every dynamic form question gets its own readable column on the
+// Registrations sheet (self-healed in, same pattern as ROUND_HEADERS)
+// instead of being buried in the AnswersJson blob — except the handful of
+// original fixed questions (f1,f2,f3,f5,f6,f7,f8,f9) that already have
+// named columns of their own (Email/Name/Phone/Area/Arrival/Source/Wines/
+// Prices), so those aren't duplicated. AnswersJson is still written on
+// every submit as a redundant safety net, and stays the fallback source on
+// read for any answer whose question predates its own column.
+
+const LEGACY_MAPPED_FIELD_IDS = ['f1', 'f2', 'f3', 'f5', 'f6', 'f7', 'f8', 'f9'];
+
+/** One entry per current question that needs its own Registrations column:
+ * every non-QR field except the legacy ones already covered by a named
+ * column. Header text is "Q: <label>" — the "Q: " prefix guarantees it can
+ * never collide with a fixed REG_HEADERS name even if a question happens to
+ * be labeled e.g. "Name". Duplicate labels get "(2)", "(3)", … appended. */
+function answerColumns_(fields) {
+  const seen = {};
+  return fields
+    .filter((f) => f.type !== 'qr' && LEGACY_MAPPED_FIELD_IDS.indexOf(f.id) === -1)
+    .map((f) => {
+      const label = (f.label || f.id || '').toString().trim() || f.id;
+      let header = 'Q: ' + label;
+      if (seen[header]) { seen[header] += 1; header = header + ' (' + seen[header] + ')'; } else { seen[header] = 1; }
+      return { id: f.id, header: header };
+    });
+}
 
 function readRegistrations() {
-  return sheetToObjects(getSheet('Registrations', REG_HEADERS));
+  const dynCols = answerColumns_(readFormFields());
+  const headers = REG_HEADERS.concat(dynCols.map((c) => c.header));
+  const rows = sheetToObjects(getSheet('Registrations', headers));
+  rows.forEach((r) => {
+    let answers = {};
+    if (r.AnswersJson) { try { answers = JSON.parse(r.AnswersJson) || {}; } catch (e) { answers = {}; } }
+    dynCols.forEach((c) => {
+      const v = r[c.header];
+      if (v !== undefined && v !== '') answers[c.id] = v;
+    });
+    r.AnswersJson = JSON.stringify(answers);
+  });
+  return rows;
 }
 
 function nextRefNo() {
@@ -250,16 +302,25 @@ function saveBase64ToDrive(base64, fileName, mimeType, subfolderName) {
 }
 
 function submitRegistration(p) {
-  const sh = getSheet('Registrations', REG_HEADERS);
+  const dynCols = answerColumns_(readFormFields());
+  const sh = getSheet('Registrations', REG_HEADERS.concat(dynCols.map((c) => c.header)));
   const refNo = nextRefNo();
   let slipUrl = '';
   if (p.slipBase64) slipUrl = saveBase64ToDrive(p.slipBase64, refNo + '_' + (p.fileName || 'slip.jpg'), p.mimeType || 'image/jpeg');
-  sh.appendRow([
-    new Date(), refNo, p.name || '', p.phone || '', p.email || '', p.area || '',
-    p.arrival || '', p.source || '', (p.wines || []).join(', '), (p.prices || []).join(', '),
-    slipUrl, p.amount || 0, 'pending', '', p.roundId || '', p.roundName || '',
-    JSON.stringify(p.answers || {}),
-  ]);
+  const answers = p.answers || {};
+  const values = {
+    Timestamp: new Date(), RefNo: refNo, Name: p.name || '', Phone: p.phone || '', Email: p.email || '',
+    Area: p.area || '', Arrival: p.arrival || '', Source: p.source || '',
+    Wines: (p.wines || []).join(', '), Prices: (p.prices || []).join(', '),
+    SlipUrl: slipUrl, Amount: p.amount || 0, Status: 'pending', RejectReason: '',
+    RoundId: p.roundId || '', RoundName: p.roundName || '', AnswersJson: JSON.stringify(answers),
+  };
+  dynCols.forEach((c) => {
+    const v = answers[c.id];
+    if (v === undefined) return;
+    values[c.header] = Array.isArray(v) ? v.join(', ') : v;
+  });
+  appendRowByHeaders_(sh, values);
   return { ok: true, refNo };
 }
 
@@ -382,10 +443,12 @@ function readRounds() {
 function addRound(p) {
   const sh = getSheet('Rounds', ROUND_HEADERS);
   const id = 'round-' + Date.now();
-  sh.appendRow([
-    id, p.name || '', p.date || '', p.startTime || '', p.endTime || '', p.venue || '', p.capacity || 0, p.status || 'closed',
-    p.textTh || '', p.textEn || '', (p.imageUrls || []).join(','), ASPECT_TO_CELL[p.bannerAspect] || 'wide', p.published !== false,
-  ]);
+  appendRowByHeaders_(sh, {
+    Id: id, Name: p.name || '', Title: p.title || '', Date: p.date || '', StartTime: p.startTime || '',
+    EndTime: p.endTime || '', Venue: p.venue || '', Capacity: p.capacity || 0, Status: p.status || 'closed',
+    TextTh: p.textTh || '', TextEn: p.textEn || '', ImageUrls: (p.imageUrls || []).join(','),
+    BannerAspect: ASPECT_TO_CELL[p.bannerAspect] || 'wide', Published: p.published !== false,
+  });
   return { ok: true, id };
 }
 
@@ -396,7 +459,7 @@ function updateRound(p) {
     if (String(data[i][0]) === String(p.id)) {
       const headers = data[0];
       const setCol = (name, value) => sh.getRange(i + 1, headers.indexOf(name) + 1).setValue(value);
-      ['Name','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','Published'].forEach(key => {
+      ['Name','Title','Date','StartTime','EndTime','Venue','Capacity','Status','TextTh','TextEn','Published'].forEach(key => {
         const lowerKey = key.charAt(0).toLowerCase() + key.slice(1);
         if (p[lowerKey] !== undefined) setCol(key, p[lowerKey]);
       });

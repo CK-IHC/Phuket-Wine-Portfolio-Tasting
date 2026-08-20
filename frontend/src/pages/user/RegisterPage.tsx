@@ -8,6 +8,10 @@ import { Blueprint } from '../../components/ui/Blueprint';
 import { DynamicFormField, type FieldValue } from '../../components/DynamicFormField';
 import { api } from '../../lib/api';
 import { buildQrCardBlob } from '../../lib/qrCard';
+import { buildEntryCardBlob } from '../../lib/entryCard';
+import { saveImageFromUrl } from '../../lib/saveImage';
+import { DEFAULT_EVENT_TITLE } from '../../lib/roundTitle';
+import { formatDateStringOnly } from '../../lib/format';
 import type { EventRound, FormField } from '../../lib/types';
 
 export function RegisterPage() {
@@ -28,6 +32,7 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [refNo, setRefNo] = useState<string | null>(null);
   const [qrCardUrl, setQrCardUrl] = useState<string | null>(null);
+  const [entryCardUrl, setEntryCardUrl] = useState<string | null>(null);
 
   useEffect(() => {
     api.getFormFields().then(setFields).catch(() => {});
@@ -68,7 +73,7 @@ export function RegisterPage() {
       const blob = await buildQrCardBlob({
         qrUrl: field.qrUrl,
         caption: field.qrCaption,
-        heading: 'Phuket Wine Portfolio Tasting',
+        heading: selectedRound?.title || DEFAULT_EVENT_TITLE,
       });
       setQrCardUrl(URL.createObjectURL(blob));
     } catch {
@@ -81,38 +86,39 @@ export function RegisterPage() {
     setQrCardUrl(null);
   };
 
-  const saveQrCard = async () => {
-    if (!qrCardUrl) return;
-    // The <a download> trick is desktop-only — iOS/Android browsers mostly
-    // just navigate to the image instead of saving it. The Web Share API's
-    // native share sheet (which includes "Save Image"/"Save to Files") is
-    // what actually lets mobile users save a PNG, so prefer it when the
-    // device supports sharing files.
-    const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean };
-    try {
-      const blob = await fetch(qrCardUrl).then((r) => r.blob());
-      const file = new File([blob], 'payment-qr-card.png', { type: 'image/png' });
-      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
-        await nav.share({ files: [file] });
-        return;
-      }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-    }
-    // iOS Safari doesn't support sharing files on older versions and also
-    // ignores the download attribute (just navigates instead of saving) —
-    // open the image in its own tab so long-press-to-save still works.
-    const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS) {
-      window.open(qrCardUrl, '_blank');
-      toast(t('toastLongPressSave'));
-      return;
-    }
-    const a = document.createElement('a');
-    a.href = qrCardUrl;
-    a.download = 'payment-qr-card.png';
-    a.click();
-  };
+  const saveQrCard = () => qrCardUrl && saveImageFromUrl(qrCardUrl, 'payment-qr-card.png', () => toast(t('toastLongPressSave')));
+  const saveEntryCard = () => entryCardUrl && saveImageFromUrl(entryCardUrl, 'entry-card.png', () => toast(t('toastLongPressSave')));
+
+  // Status is always "pending" the instant a registration is submitted —
+  // no admin has reviewed the slip yet — so the card must say that, not
+  // claim the payment is already verified.
+  useEffect(() => {
+    if (!refNo) return;
+    let cancelled = false;
+    const name = (answers['f2'] as string) || '';
+    buildEntryCardBlob({
+      eventTitle: selectedRound?.title || DEFAULT_EVENT_TITLE,
+      cardLabel: t('entryCardLabel'),
+      statusPillText: t('entryStatusPillSuccess'),
+      refNoLabel: t('entryRefNoLabel'),
+      refNo,
+      name,
+      eventInfoLabel: t('entryInfoTitle'),
+      dateLabel: t('entryDateLabel'),
+      dateValue: selectedRound ? formatDateStringOnly(selectedRound.date, lang) : '',
+      timeLabel: t('entryTimeLabel'),
+      timeValue: selectedRound ? `${selectedRound.startTime}${selectedRound.endTime ? '–' + selectedRound.endTime : ''}` : '',
+      venueLabel: t('entryVenueLabel'),
+      venueValue: selectedRound?.venue || '',
+      footerNote: t('entryFooterNote'),
+      statusLineLabel: t('entryStatusLineLabel'),
+      statusLineValue: t('statPending'),
+      statusLineColor: '#7a5717',
+    })
+      .then((blob) => { if (!cancelled) setEntryCardUrl(URL.createObjectURL(blob)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [refNo]);
 
   const submit = async () => {
     if (openRounds.length > 1 && !selectedRound) {
@@ -167,15 +173,17 @@ export function RegisterPage() {
           <Button variant="ghost" onClick={() => navigate('/')}>{t('backHome')}</Button>
           <LangToggle />
         </nav>
-        <div style={{ maxWidth: 520, margin: '60px auto', padding: '0 16px' }}>
-          <Blueprint className="card" style={{ textAlign: 'center', gap: 14, padding: '32px 20px' }}>
-            <span className="tag tag-accent" style={{ width: 'fit-content', margin: '0 auto' }}>{t('successTag')}</span>
-            <h2>{t('successTitle')}</h2>
-            <p className="text-muted">{t('successRefLabel')}</p>
-            <div style={{ fontFamily: 'var(--font-heading)', fontSize: 34, letterSpacing: '.04em' }}>{refNo}</div>
-            <p className="text-muted" style={{ fontSize: 13 }}>{t('successNote')}</p>
-            <Button variant="primary" block onClick={() => navigate('/')}>{t('backHomeBtn')}</Button>
-          </Blueprint>
+        <div style={{ maxWidth: 380, margin: '40px auto', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+          <h2 style={{ margin: 0, textAlign: 'center' }}>{t('successTitle')}</h2>
+          {entryCardUrl ? (
+            <img src={entryCardUrl} style={{ width: '100%', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }} />
+          ) : (
+            <p className="text-muted">{t('loading')}</p>
+          )}
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <Button variant="secondary" block onClick={() => navigate('/')}>{t('backHomeBtn')}</Button>
+            <Button variant="primary" block onClick={saveEntryCard} disabled={!entryCardUrl}>{t('downloadEntryCardBtn')}</Button>
+          </div>
         </div>
       </div>
     );

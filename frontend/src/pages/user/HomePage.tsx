@@ -8,6 +8,7 @@ import { Blueprint } from '../../components/ui/Blueprint';
 import { BannerCarousel } from '../../components/BannerCarousel';
 import { api } from '../../lib/api';
 import { formatDateStringOnly } from '../../lib/format';
+import { primaryEventTitle } from '../../lib/roundTitle';
 import type { EventRound } from '../../lib/types';
 
 export function HomePage() {
@@ -31,7 +32,7 @@ export function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)' }}>
       <nav className="nav" style={{ borderBottom: '1px solid var(--color-divider)' }}>
-        <span className="nav-brand">Phuket Wine Portfolio Tasting</span>
+        <span className="nav-brand">{primaryEventTitle(rounds)}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <LangToggle />
           <button

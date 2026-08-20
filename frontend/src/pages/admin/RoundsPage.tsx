@@ -5,6 +5,7 @@ import { api } from '../../lib/api';
 import type { BannerAspect, EventRound } from '../../lib/types';
 import { formatDateStringOnly } from '../../lib/format';
 import { diagnoseImageLoadError } from '../../lib/diagnoseImage';
+import { DEFAULT_EVENT_TITLE } from '../../lib/roundTitle';
 import { ResilientImage } from '../../components/ResilientImage';
 import { Button } from '../../components/ui/Button';
 import { Dialog } from '../../components/ui/Dialog';
@@ -58,7 +59,7 @@ function detectImageAspect(file: File): Promise<BannerAspect> {
 type Draft = Omit<EventRound, 'id' | 'capacity' | 'status'> & { capacity: string };
 
 const EMPTY_DRAFT: Draft = {
-  name: '', date: '', startTime: '', endTime: '', venue: '', capacity: '0',
+  name: '', title: '', date: '', startTime: '', endTime: '', venue: '', capacity: '0',
   textTh: '', textEn: '', banners: [], bannerAspect: '16/9', published: true,
 };
 
@@ -101,7 +102,7 @@ export function RoundsPage() {
   const openEdit = (r: EventRound) => {
     setEditingId(r.id);
     setDraft({
-      name: r.name, date: r.date, startTime: r.startTime, endTime: r.endTime, venue: r.venue,
+      name: r.name, title: r.title, date: r.date, startTime: r.startTime, endTime: r.endTime, venue: r.venue,
       capacity: String(r.capacity), textTh: r.textTh, textEn: r.textEn,
       banners: r.banners, bannerAspect: r.bannerAspect, published: r.published,
     });
@@ -211,6 +212,9 @@ export function RoundsPage() {
         >
           <Field label={t('roundNameLabel')}>
             <input className="input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+          </Field>
+          <Field label={t('eventTitleFieldLabel')}>
+            <input className="input" placeholder={DEFAULT_EVENT_TITLE} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
           </Field>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <Field label={t('roundDateLabel')}>

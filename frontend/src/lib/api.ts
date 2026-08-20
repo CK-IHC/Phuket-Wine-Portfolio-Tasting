@@ -78,6 +78,7 @@ function rawRoundToEventRound(raw: any): EventRound {
   return {
     id: raw.Id || String(raw._row ?? ''),
     name: raw.Name || '',
+    title: raw.Title || '',
     date: raw.Date || '',
     startTime: raw.StartTime || '',
     endTime: raw.EndTime || '',

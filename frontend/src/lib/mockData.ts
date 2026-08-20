@@ -49,9 +49,9 @@ export function seedRounds(): EventRound[] {
     { id: 'banner' + Date.now() + Math.random(), url: '' },
   ];
   return [
-    { id: 'round-2024', name: 'Phuket Wine Portfolio Tasting 2024', date: '2024-09-14', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
-    { id: 'round-2025', name: 'Phuket Wine Portfolio Tasting 2025', date: '2025-09-13', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
-    { id: 'round-2026', name: 'Phuket Wine Portfolio Tasting 2026', date: '2026-09-20', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 150, status: 'open', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
+    { id: 'round-2024', name: 'Phuket Wine Portfolio Tasting 2024', title: 'Phuket Wine Portfolio Tasting', date: '2024-09-14', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
+    { id: 'round-2025', name: 'Phuket Wine Portfolio Tasting 2025', title: 'Phuket Wine Portfolio Tasting', date: '2025-09-13', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 0, status: 'closed', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
+    { id: 'round-2026', name: 'Phuket Wine Portfolio Tasting 2026', title: 'Phuket Wine Portfolio Tasting', date: '2026-09-20', startTime: '18:00', endTime: '21:00', venue: 'The Slate, Phuket', capacity: 150, status: 'open', textTh, textEn, banners: banners(), bannerAspect: '16/9', published: true },
   ];
 }
 

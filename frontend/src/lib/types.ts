@@ -38,6 +38,10 @@ export interface Banner {
 export interface EventRound {
   id: string;
   name: string;
+  /** Brand/site title shown in the nav bar (user + admin) and on the QR
+   * payment / entry cards for this round — independent of `name`, which is
+   * the round's own label (e.g. includes the year) shown in round pickers. */
+  title: string;
   date: string;
   startTime: string;
   endTime: string;
